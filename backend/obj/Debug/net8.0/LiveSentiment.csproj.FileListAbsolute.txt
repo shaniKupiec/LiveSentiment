@@ -133,3 +133,5 @@ C:\dev\HIT\LiveSentiment\backend\obj\Debug\net8.0\refint\LiveSentiment.dll
 C:\dev\HIT\LiveSentiment\backend\obj\Debug\net8.0\LiveSentiment.pdb
 C:\dev\HIT\LiveSentiment\backend\obj\Debug\net8.0\LiveSentiment.genruntimeconfig.cache
 C:\dev\HIT\LiveSentiment\backend\obj\Debug\net8.0\ref\LiveSentiment.dll
+C:\dev\HIT\LiveSentiment\backend\bin\Debug\net8.0\AuthRoutes.postman_collection.json
+C:\dev\HIT\LiveSentiment\backend\obj\Debug\net8.0\LiveSentiment.sourcelink.json

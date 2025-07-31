@@ -11,7 +11,7 @@ namespace LiveSentiment.Controllers
         public IActionResult Login()
         {
             // TODO: Implement login logic
-            return Ok();
+            return Ok("Login endpoint is working!");
         }
 
         // POST: api/auth/signup
@@ -19,7 +19,7 @@ namespace LiveSentiment.Controllers
         public IActionResult Signup()
         {
             // TODO: Implement signup logic
-            return Ok();
+            return Ok("Signup endpoint is working!");
         }
     }
 } 

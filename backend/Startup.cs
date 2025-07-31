@@ -19,6 +19,10 @@ namespace LiveSentiment
             // Add controllers for API endpoints
             services.AddControllers();
 
+            // Add Swagger services
+            services.AddEndpointsApiExplorer();
+            services.AddSwaggerGen();
+
             // Add SignalR for real-time communication
             services.AddSignalR();
 
