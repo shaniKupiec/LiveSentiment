@@ -136,15 +136,67 @@ CREATE SCHEMA public;
 
 ---
 
-## 6. When to Use Docker Compose vs. Local Dev Servers
+## 6. Recommended Development Approach: Hybrid (Best of Both Worlds)
 
-- **Use Docker Compose:**
-  - When you want to test the full stack (frontend, backend, db) together.
-  - For production or staging deployments.
+### **For Active Development: Run Services Locally**
 
-- **Use local dev servers:**
-  - When actively developing frontend or backend for faster feedback (hot reload, breakpoints, etc).
-  - You can run the frontend and backend outside Docker, but the database is easiest to manage with Docker Compose.
+**Frontend (Vite):**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+- Runs on `http://localhost:5173` with hot reload
+- Much faster feedback loop for UI changes
+- Better debugging with browser dev tools
+
+**Backend (.NET):**
+```bash
+cd backend
+dotnet restore
+dotnet run
+```
+- Runs on `http://localhost:5000`
+- Hot reload for code changes
+- Better debugging with breakpoints
+- Faster compilation
+
+**Database: Use Docker (Recommended)**
+```bash
+docker-compose up db pgadmin
+```
+- Keep PostgreSQL and pgAdmin in Docker
+- Easy to reset/rebuild when needed
+- Consistent database state
+
+### **Quick Start Commands for Development**
+
+For typical development:
+```bash
+# Terminal 1: Start database
+docker-compose up db pgadmin
+
+# Terminal 2: Start backend
+cd backend && dotnet run
+
+# Terminal 3: Start frontend  
+cd frontend && npm run dev
+```
+
+### **When to Use Full Docker Compose**
+
+Use `docker-compose up --build` when:
+- Testing the complete integration
+- Simulating production environment
+- When you need to verify everything works together
+- Before committing major changes
+
+### **Why This Hybrid Approach?**
+
+1. **Faster Development**: Local services have much faster hot reload
+2. **Better Debugging**: You can set breakpoints and use IDE debugging
+3. **Database Consistency**: Docker ensures the database is always in a known state
+4. **Flexibility**: You can run just the services you're actively working on
 
 ---
 
