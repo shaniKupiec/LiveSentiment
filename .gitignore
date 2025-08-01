@@ -1,6 +1,8 @@
 # .NET Backend
 bin/
 obj/
+backend/obj/
+backend/bin/
 *.user
 *.userosscache
 *.suo

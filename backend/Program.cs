@@ -2,6 +2,9 @@ using LiveSentiment;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure the application to listen on all interfaces for Docker
+builder.WebHost.UseUrls("http://0.0.0.0:80");
+
 // Add services to the container.
 var startup = new Startup(builder.Configuration);
 startup.ConfigureServices(builder.Services);
