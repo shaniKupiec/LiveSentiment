@@ -2,21 +2,35 @@ version: '3.8'
 
 services:
   backend:
-    build: ./backend
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile.dev
     ports:
       - "5000:80"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=db;Database=livesentiment;Username=postgres;Password=postgres
+    volumes:
+      - ./backend:/app
+      - /app/bin
+      - /app/obj
     depends_on:
       - db
 
   frontend:
-    build: ./frontend
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile.dev
     ports:
-      - "3000:80"
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
     depends_on:
       - backend
+    command: npm run dev -- --host 0.0.0.0
 
   db:
     image: postgres:15

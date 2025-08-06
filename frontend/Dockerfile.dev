@@ -1,0 +1,15 @@
+FROM node:20
+
+WORKDIR /app
+
+# Copy package files and install dependencies
+COPY package.json package-lock.json ./
+RUN npm install
+
+# Copy source code
+COPY . .
+
+EXPOSE 5173
+
+# Use Vite dev server for hot reloading
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"] 

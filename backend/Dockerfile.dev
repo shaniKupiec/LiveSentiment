@@ -1,0 +1,18 @@
+FROM mcr.microsoft.com/dotnet/sdk:8.0
+
+WORKDIR /app
+
+# Install netcat for database connectivity check
+RUN apt-get update && apt-get install -y netcat-openbsd && rm -rf /var/lib/apt/lists/*
+
+# Copy csproj and restore dependencies
+COPY *.csproj ./
+RUN dotnet restore
+
+# Copy everything else
+COPY . ./
+
+EXPOSE 80
+
+# Use dotnet watch for hot reloading
+CMD ["dotnet", "watch", "run"] 

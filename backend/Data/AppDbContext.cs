@@ -42,6 +42,23 @@ namespace LiveSentiment.Data
                 .HasOne(s => s.Poll)
                 .WithOne(p => p.SentimentAggregate)
                 .HasForeignKey<SentimentAggregate>(s => s.PollId);
+
+            // Configure JSON properties for PostgreSQL
+            modelBuilder.Entity<Poll>()
+                .Property(p => p.Options)
+                .HasColumnType("jsonb");
+
+            modelBuilder.Entity<SentimentAggregate>()
+                .Property(s => s.SentimentCounts)
+                .HasColumnType("jsonb");
+
+            modelBuilder.Entity<SentimentAggregate>()
+                .Property(s => s.EmotionCounts)
+                .HasColumnType("jsonb");
+
+            modelBuilder.Entity<SentimentAggregate>()
+                .Property(s => s.Keywords)
+                .HasColumnType("jsonb");
         }
     }
 } 

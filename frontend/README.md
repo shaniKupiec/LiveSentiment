@@ -1,69 +1,100 @@
-# React + TypeScript + Vite
+# LiveSentiment Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React-based frontend for the LiveSentiment application with authentication, real-time polling, and sentiment analysis features.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Authentication**: Login and signup with JWT tokens
+- **Material UI**: Modern, responsive design with Material-UI components
+- **Emotion Styling**: CSS-in-JS styling with Emotion
+- **TypeScript**: Full type safety
+- **Vite**: Fast development and build tooling
 
-## Expanding the ESLint configuration
+## Development Setup
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Prerequisites
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- Node.js 18+ 
+- npm or yarn
+- Backend API running on `http://localhost:5261`
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+### Installation
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+The frontend will be available at `http://localhost:5173`
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Testing the Authentication Flow
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+1. **Start the backend** (from the backend directory):
+   ```bash
+   cd backend
+   dotnet run
+   ```
+
+2. **Start the frontend**:
+   ```bash
+   cd frontend
+   npm run dev
+   ```
+
+3. **Test Signup**:
+   - Navigate to `http://localhost:5173`
+   - Click "Sign up here" or go to `/signup`
+   - Fill in your details and create an account
+   - You should be redirected to the presenter dashboard
+
+4. **Test Login**:
+   - Logout and go to `/login`
+   - Use your credentials to sign in
+   - You should be redirected to the presenter dashboard
+
+5. **Test Authentication Persistence**:
+   - Refresh the page while logged in
+   - You should remain logged in and on the dashboard
+
+## Project Structure
+
 ```
+src/
+├── pages/           # Page components
+│   ├── LoginPage.tsx
+│   ├── SignupPage.tsx
+│   ├── PresenterDashboard.tsx
+│   └── AudienceView.tsx
+├── services/        # API services
+│   └── api.ts
+├── App.tsx          # Main app component with routing
+└── main.tsx         # App entry point
+```
+
+## API Integration
+
+The frontend communicates with the backend API at `http://localhost:5261`:
+
+- `POST /api/auth/login` - User login
+- `POST /api/auth/signup` - User registration
+
+Authentication tokens are stored in localStorage and automatically included in API requests.
+
+## Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
+
+## Technologies Used
+
+- **React 19** - UI framework
+- **TypeScript** - Type safety
+- **Material-UI** - Component library
+- **Emotion** - CSS-in-JS styling
+- **React Router** - Client-side routing
+- **Vite** - Build tool and dev server

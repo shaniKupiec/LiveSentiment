@@ -6,16 +6,35 @@ This guide is for developers working on the LiveSentiment project. It summarizes
 
 ## 1. Docker Compose (Full Stack)
 
+### Production Mode (Current Setup)
 - **Start all services (backend, frontend, db):**
   ```sh
   docker-compose up --build
   ```
-  Use this when you want to test the full stack together, or for production-like local testing.
+  Use this when you want to test the complete integration or simulate production environment.
 
 - **Stop all services:**
   ```sh
   docker-compose down
   ```
+
+### Development Mode (Live Reload)
+- **Start all services with live reload:**
+  ```sh
+  docker-compose -f docker-compose.dev.yml up --build
+  ```
+  This enables hot reloading for both frontend and backend. Changes will be reflected immediately without rebuilding containers.
+
+- **Stop development services:**
+  ```sh
+  docker-compose -f docker-compose.dev.yml down
+  ```
+
+**Key differences in development mode:**
+- Frontend runs on `http://localhost:5173` (Vite dev server)
+- Backend runs on `http://localhost:5000` (dotnet watch)
+- Code changes are reflected immediately
+- No need to rebuild containers for code changes
 
 ---
 

@@ -4,28 +4,97 @@ import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import PresenterDashboard from "./pages/PresenterDashboard";
 import AudienceView from "./pages/AudienceView";
+import { CircularProgress, Box } from "@mui/material";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
-// Simple role-based routing (expand with real auth later)
-const App: React.FC = () => {
-  // Placeholder: Replace with real auth/role logic
-  const userRole = localStorage.getItem("role"); // "presenter" or "audience"
+const AppRoutes: React.FC = () => {
+  const { isAuthenticated, user, userRole, logout, loading } = useAuth();
+
+  // Show loading spinner while checking authentication
+  if (loading) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="100vh"
+        sx={{
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        }}
+      >
+        <CircularProgress size={60} sx={{ color: "white" }} />
+      </Box>
+    );
+  }
 
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
+        {/* Public routes */}
+        <Route
+          path="/login"
+          element={
+            isAuthenticated ? (
+              <Navigate to={userRole === "presenter" ? "/presenter" : "/audience"} />
+            ) : (
+              <LoginPage />
+            )
+          }
+        />
+        <Route
+          path="/signup"
+          element={
+            isAuthenticated ? (
+              <Navigate to={userRole === "presenter" ? "/presenter" : "/audience"} />
+            ) : (
+              <SignupPage />
+            )
+          }
+        />
+
+        {/* Protected routes */}
         <Route
           path="/presenter"
-          element={userRole === "presenter" ? <PresenterDashboard /> : <Navigate to="/login" />}
+          element={
+            isAuthenticated && userRole === "presenter" ? (
+              <PresenterDashboard user={user} onLogout={logout} />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
         />
         <Route
           path="/audience"
-          element={userRole === "audience" ? <AudienceView /> : <Navigate to="/login" />}
+          element={
+            isAuthenticated && userRole === "audience" ? (
+              <AudienceView user={user} onLogout={logout} />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
         />
-        <Route path="*" element={<Navigate to="/login" />} />
+
+        {/* Default redirect */}
+        <Route
+          path="*"
+          element={
+            isAuthenticated ? (
+              <Navigate to={userRole === "presenter" ? "/presenter" : "/audience"} />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
       </Routes>
     </Router>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AppRoutes />
+    </AuthProvider>
   );
 };
 
