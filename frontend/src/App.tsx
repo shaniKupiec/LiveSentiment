@@ -6,6 +6,8 @@ import PresenterDashboard from "./pages/PresenterDashboard";
 import AudienceView from "./pages/AudienceView";
 import { CircularProgress, Box } from "@mui/material";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { ErrorProvider } from "./components/ErrorHandler";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, user, userRole, logout, loading } = useAuth();
@@ -92,9 +94,13 @@ const AppRoutes: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <AppRoutes />
-    </AuthProvider>
+    <ErrorBoundary>
+      <ErrorProvider>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </ErrorProvider>
+    </ErrorBoundary>
   );
 };
 

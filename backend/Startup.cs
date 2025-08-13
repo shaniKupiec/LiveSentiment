@@ -1,5 +1,6 @@
 using LiveSentiment.Data;
 using LiveSentiment.Services;
+using LiveSentiment.Middleware;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using System.Text;
 
 namespace LiveSentiment
@@ -25,7 +27,35 @@ namespace LiveSentiment
 
             // Add Swagger services
             services.AddEndpointsApiExplorer();
-            services.AddSwaggerGen();
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "LiveSentiment API", Version = "v1" });
+                
+                // Add JWT authentication support to Swagger
+                c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                {
+                    Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+                    Name = "Authorization",
+                    In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+                    Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer"
+                });
+
+                c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+                {
+                    {
+                        new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                        {
+                            Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                            {
+                                Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        new string[] {}
+                    }
+                });
+            });
 
             // Add SignalR for real-time communication
             services.AddSignalR();
@@ -47,6 +77,9 @@ namespace LiveSentiment
 
             // Register JWT service
             services.AddScoped<IJwtService, JwtService>();
+            
+            // Register Label service
+            services.AddScoped<ILabelService, LabelService>();
 
             // Configure JWT Authentication
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -77,6 +110,9 @@ namespace LiveSentiment
             }
 
             if (env.IsDevelopment()) app.UseDeveloperExceptionPage();
+
+            // Add global exception handler
+            app.UseMiddleware<GlobalExceptionHandler>();
 
             app.UseRouting();
 

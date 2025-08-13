@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using LiveSentiment.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LiveSentiment.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250810094305_EditPresentationTable")]
+    partial class EditPresentationTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -22,41 +25,6 @@ namespace LiveSentiment.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("LiveSentiment.Models.Label", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Color")
-                        .IsRequired()
-                        .HasMaxLength(7)
-                        .HasColumnType("character varying(7)");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime>("LastUpdated")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<Guid>("PresenterId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PresenterId");
-
-                    b.ToTable("Labels");
-                });
 
             modelBuilder.Entity("LiveSentiment.Models.Poll", b =>
                 {
@@ -99,8 +67,10 @@ namespace LiveSentiment.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid?>("LabelId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<DateTime>("LastUpdated")
                         .HasColumnType("timestamp with time zone");
@@ -114,8 +84,6 @@ namespace LiveSentiment.Migrations
                         .HasColumnType("character varying(255)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("LabelId");
 
                     b.HasIndex("PresenterId");
 
@@ -201,17 +169,6 @@ namespace LiveSentiment.Migrations
                     b.ToTable("SentimentAggregates");
                 });
 
-            modelBuilder.Entity("LiveSentiment.Models.Label", b =>
-                {
-                    b.HasOne("LiveSentiment.Models.Presenter", "Presenter")
-                        .WithMany("Labels")
-                        .HasForeignKey("PresenterId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Presenter");
-                });
-
             modelBuilder.Entity("LiveSentiment.Models.Poll", b =>
                 {
                     b.HasOne("LiveSentiment.Models.Presentation", "Presentation")
@@ -225,18 +182,11 @@ namespace LiveSentiment.Migrations
 
             modelBuilder.Entity("LiveSentiment.Models.Presentation", b =>
                 {
-                    b.HasOne("LiveSentiment.Models.Label", "Label")
-                        .WithMany("Presentations")
-                        .HasForeignKey("LabelId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("LiveSentiment.Models.Presenter", "Presenter")
                         .WithMany("Presentations")
                         .HasForeignKey("PresenterId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Label");
 
                     b.Navigation("Presenter");
                 });
@@ -263,11 +213,6 @@ namespace LiveSentiment.Migrations
                     b.Navigation("Poll");
                 });
 
-            modelBuilder.Entity("LiveSentiment.Models.Label", b =>
-                {
-                    b.Navigation("Presentations");
-                });
-
             modelBuilder.Entity("LiveSentiment.Models.Poll", b =>
                 {
                     b.Navigation("Responses");
@@ -283,8 +228,6 @@ namespace LiveSentiment.Migrations
 
             modelBuilder.Entity("LiveSentiment.Models.Presenter", b =>
                 {
-                    b.Navigation("Labels");
-
                     b.Navigation("Presentations");
                 });
 #pragma warning restore 612, 618

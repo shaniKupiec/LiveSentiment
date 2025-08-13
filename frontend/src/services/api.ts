@@ -1,3 +1,8 @@
+import type { SuccessResponse, ErrorResponse } from '../types/error';
+import { ApiError } from '../types/error';
+import type { Presentation, CreatePresentationRequest, UpdatePresentationRequest } from '../types/presentation';
+import type { Label, CreateLabelRequest, UpdateLabelRequest, LabelWithPresentations } from '../types/label';
+
 const API_BASE_URL = 'http://localhost:5000';
 
 export interface LoginRequest {
@@ -31,21 +36,61 @@ class ApiService {
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     
-    const defaultOptions: RequestInit = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
+    // Fix: Properly merge headers to preserve Content-Type when Authorization is added
+    const mergedHeaders = {
+      'Content-Type': 'application/json',
+      ...options.headers,
     };
 
-    const response = await fetch(url, { ...defaultOptions, ...options });
-    const data = await response.json();
+    try {
+      console.log('🌐 Making request to:', url);
+      console.log('📤 Request options:', { ...options, headers: mergedHeaders });
+      
+      const response = await fetch(url, { 
+        ...options, 
+        headers: mergedHeaders 
+      });
+      
+      console.log('📥 Response status:', response.status);
+      console.log('📥 Response headers:', Object.fromEntries(response.headers.entries()));
+      
+      if (!response.ok) {
+        const errorData: ErrorResponse = await response.json();
+        console.log('❌ Error response:', errorData);
+        const apiError = new ApiError(
+          errorData.message || `HTTP error! status: ${response.status}`,
+          response.status,
+          errorData.errorCode,
+          errorData.userMessage
+        );
+        throw apiError;
+      }
 
-    if (!response.ok) {
-      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+      const responseText = await response.text();
+      console.log('📥 Response body:', responseText);
+      
+      if (!responseText) {
+        console.log('⚠️ Empty response body');
+        return [] as T;
+      }
+
+      const data: SuccessResponse<T> = JSON.parse(responseText);
+      console.log('✅ Parsed response data:', data);
+      return data.data;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      
+      // Handle network errors or JSON parsing errors
+      const apiError = new ApiError(
+        error instanceof Error ? error.message : 'Network error',
+        0,
+        undefined,
+        'Unable to connect to the server. Please check your internet connection.'
+      );
+      throw apiError;
     }
-
-    return data;
   }
 
   async login(credentials: LoginRequest): Promise<AuthResponse> {
@@ -62,9 +107,129 @@ class ApiService {
     });
   }
 
+  // Presentation methods
+  async getPresentations(): Promise<Presentation[]> {
+    return this.makeRequest<Presentation[]>('/api/presentations', {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+    });
+  }
+
+  async getPresentation(id: string): Promise<Presentation> {
+    return this.makeRequest<Presentation>(`/api/presentations/${id}`, {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+    });
+  }
+
+  async createPresentation(data: CreatePresentationRequest): Promise<Presentation> {
+    return this.makeRequest<Presentation>('/api/presentations', {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updatePresentation(id: string, data: UpdatePresentationRequest): Promise<Presentation> {
+    return this.makeRequest<Presentation>(`/api/presentations/${id}`, {
+      method: 'PUT',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deletePresentation(id: string): Promise<{ message: string }> {
+    return this.makeRequest<{ message: string }>(`/api/presentations/${id}`, {
+      method: 'DELETE',
+      headers: this.getAuthHeaders(),
+    });
+  }
+
+  // Label methods
+  async getLabels(): Promise<Label[]> {
+    return this.makeRequest<Label[]>('/api/labels', {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+    });
+  }
+
+  async getActiveLabels(): Promise<Label[]> {
+    return this.makeRequest<Label[]>('/api/labels', {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+    });
+  }
+
+  async getAllLabels(): Promise<Label[]> {
+    return this.makeRequest<Label[]>('/api/labels/all', {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+    });
+  }
+
+  async getLabel(id: string): Promise<Label> {
+    return this.makeRequest<Label>(`/api/labels/${id}`, {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+    });
+  }
+
+  async getLabelWithPresentations(id: string): Promise<LabelWithPresentations> {
+    return this.makeRequest<LabelWithPresentations>(`/api/labels/${id}/presentations`, {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+    });
+  }
+
+  async createLabel(data: CreateLabelRequest): Promise<Label> {
+    return this.makeRequest<Label>('/api/labels', {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateLabel(id: string, data: UpdateLabelRequest): Promise<Label> {
+    return this.makeRequest<Label>(`/api/labels/${id}`, {
+      method: 'PUT',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteLabel(id: string): Promise<void> {
+    return this.makeRequest<void>(`/api/labels/${id}`, {
+      method: 'DELETE',
+      headers: this.getAuthHeaders(),
+    });
+  }
+
+  async assignLabelToPresentation(labelId: string, presentationId: string): Promise<void> {
+    return this.makeRequest<void>(`/api/labels/${labelId}/assign/${presentationId}`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+    });
+  }
+
+  async removeLabelFromPresentation(presentationId: string): Promise<void> {
+    return this.makeRequest<void>(`/api/labels/presentations/${presentationId}/label`, {
+      method: 'DELETE',
+      headers: this.getAuthHeaders(),
+    });
+  }
+
+  async reactivateLabel(labelId: string): Promise<void> {
+    return this.makeRequest<void>(`/api/labels/${labelId}/reactivate`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+    });
+  }
+
+
   // Helper method to get auth headers for authenticated requests
   getAuthHeaders(): Record<string, string> {
     const token = localStorage.getItem('token');
+    console.log('🔑 Token from localStorage:', token ? `${token.substring(0, 20)}...` : 'No token');
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
 }

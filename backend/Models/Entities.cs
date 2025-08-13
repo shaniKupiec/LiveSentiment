@@ -18,6 +18,23 @@ namespace LiveSentiment.Models
         [MaxLength(50)]
         public string LoginMethod { get; set; }
         public ICollection<Presentation> Presentations { get; set; }
+        public ICollection<Label> Labels { get; set; }
+    }
+
+    // Label entity owned by a Presenter
+    public class Label
+    {
+        public Guid Id { get; set; }
+        public Guid PresenterId { get; set; }
+        public Presenter Presenter { get; set; }
+        [MaxLength(100)]
+        public string Name { get; set; }
+        [MaxLength(7)] // Hex color code like #FF5733
+        public string Color { get; set; }
+        public DateTime CreatedDate { get; set; }
+        public DateTime LastUpdated { get; set; }
+        public bool IsActive { get; set; } = true;
+        public ICollection<Presentation> Presentations { get; set; }
     }
 
     // A Presentation owned by a Presenter
@@ -28,9 +45,10 @@ namespace LiveSentiment.Models
         public Presenter Presenter { get; set; }
         [MaxLength(255)]
         public string Title { get; set; }
-        public DateTime Date { get; set; }
-        [MaxLength(100)]
-        public string Label { get; set; }
+        public DateTime CreatedDate { get; set; }
+        public DateTime LastUpdated { get; set; }
+        public Guid? LabelId { get; set; } // Nullable - presentations can exist without labels
+        public Label Label { get; set; }
         public ICollection<Poll> Polls { get; set; }
     }
 

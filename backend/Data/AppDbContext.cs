@@ -9,6 +9,7 @@ namespace LiveSentiment.Data
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         public DbSet<Presenter> Presenters { get; set; }
+        public DbSet<Label> Labels { get; set; }
         public DbSet<Presentation> Presentations { get; set; }
         public DbSet<Poll> Polls { get; set; }
         public DbSet<Response> Responses { get; set; }
@@ -18,15 +19,30 @@ namespace LiveSentiment.Data
         {
             // Configure relationships and constraints as per schema
             modelBuilder.Entity<Presenter>().HasKey(p => p.Id);
+            modelBuilder.Entity<Label>().HasKey(l => l.Id);
             modelBuilder.Entity<Presentation>().HasKey(p => p.Id);
             modelBuilder.Entity<Poll>().HasKey(p => p.Id);
             modelBuilder.Entity<Response>().HasKey(r => r.Id);
             modelBuilder.Entity<SentimentAggregate>().HasKey(s => s.PollId);
 
+            // Label relationships
+            modelBuilder.Entity<Label>()
+                .HasOne(l => l.Presenter)
+                .WithMany(p => p.Labels)
+                .HasForeignKey(l => l.PresenterId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Presentation relationships
             modelBuilder.Entity<Presentation>()
                 .HasOne(p => p.Presenter)
                 .WithMany(pr => pr.Presentations)
                 .HasForeignKey(p => p.PresenterId);
+
+            modelBuilder.Entity<Presentation>()
+                .HasOne(p => p.Label)
+                .WithMany(l => l.Presentations)
+                .HasForeignKey(p => p.LabelId)
+                .OnDelete(DeleteBehavior.SetNull); // If label is deleted, presentation keeps labelId as null
 
             modelBuilder.Entity<Poll>()
                 .HasOne(p => p.Presentation)

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using LiveSentiment.Data;
 using LiveSentiment.Models;
 using LiveSentiment.Services;
+using LiveSentiment.Extensions;
 
 namespace LiveSentiment.Controllers
 {
@@ -25,7 +26,7 @@ namespace LiveSentiment.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return this.BadRequest(ErrorCodes.VALIDATION_ERROR, "Model validation failed", "Please check your input and try again.");
             }
 
             var presenter = await _context.Presenters
@@ -33,17 +34,17 @@ namespace LiveSentiment.Controllers
 
             if (presenter == null)
             {
-                return Unauthorized(new { message = "Invalid email or password" });
+                return this.Unauthorized(ErrorCodes.INVALID_CREDENTIALS, "Invalid email or password", "Invalid email or password. Please try again.");
             }
 
             if (!BCrypt.Net.BCrypt.Verify(request.Password, presenter.PasswordHash))
             {
-                return Unauthorized(new { message = "Invalid email or password" });
+                return this.Unauthorized(ErrorCodes.INVALID_CREDENTIALS, "Invalid email or password", "Invalid email or password. Please try again.");
             }
 
             var token = _jwtService.GenerateToken(presenter);
 
-            return Ok(new AuthResponse
+            return this.Success(new AuthResponse
             {
                 Token = token,
                 Name = presenter.Name,
@@ -58,7 +59,7 @@ namespace LiveSentiment.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return this.BadRequest(ErrorCodes.VALIDATION_ERROR, "Model validation failed", "Please check your input and try again.");
             }
 
             // Check if email already exists
@@ -67,7 +68,7 @@ namespace LiveSentiment.Controllers
 
             if (existingPresenter != null)
             {
-                return BadRequest(new { message = "Email already registered" });
+                return this.Conflict(ErrorCodes.EMAIL_ALREADY_EXISTS, "Email already registered", "This email is already registered. Please use a different email or try logging in.");
             }
 
             // Create new presenter
@@ -81,11 +82,48 @@ namespace LiveSentiment.Controllers
             };
 
             _context.Presenters.Add(presenter);
+            
+            // Create default labels for the new user
+            var defaultLabels = new List<Label>
+            {
+                new Label
+                {
+                    Id = Guid.NewGuid(),
+                    PresenterId = presenter.Id,
+                    Name = "Positive",
+                    Color = "#4CAF50",
+                    CreatedDate = DateTime.UtcNow,
+                    LastUpdated = DateTime.UtcNow,
+                    IsActive = true
+                },
+                new Label
+                {
+                    Id = Guid.NewGuid(),
+                    PresenterId = presenter.Id,
+                    Name = "Negative",
+                    Color = "#F44336",
+                    CreatedDate = DateTime.UtcNow,
+                    LastUpdated = DateTime.UtcNow,
+                    IsActive = true
+                },
+                new Label
+                {
+                    Id = Guid.NewGuid(),
+                    PresenterId = presenter.Id,
+                    Name = "Neutral",
+                    Color = "#9E9E9E",
+                    CreatedDate = DateTime.UtcNow,
+                    LastUpdated = DateTime.UtcNow,
+                    IsActive = true
+                }
+            };
+            
+            _context.Labels.AddRange(defaultLabels);
             await _context.SaveChangesAsync();
 
             var token = _jwtService.GenerateToken(presenter);
 
-            return Ok(new AuthResponse
+            return this.Success(new AuthResponse
             {
                 Token = token,
                 Name = presenter.Name,

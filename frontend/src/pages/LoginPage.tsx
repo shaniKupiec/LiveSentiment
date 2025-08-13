@@ -7,7 +7,6 @@ import {
   Typography,
   Card,
   CardContent,
-  Alert,
   CircularProgress,
   Link,
   Container,
@@ -17,6 +16,7 @@ import {
 import { styled } from "@mui/material/styles";
 import apiService, { type LoginRequest, type AuthResponse } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
+import { useErrorHandler } from "../components/ErrorHandler";
 
 const StyledCard = styled(Card)(({ theme }) => ({
   width: "100%",
@@ -93,6 +93,7 @@ interface LoginForm {
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { showError } = useErrorHandler();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   
@@ -102,7 +103,6 @@ const LoginPage: React.FC = () => {
   });
   const [errors, setErrors] = useState<Partial<LoginForm>>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
 
   const validateForm = (): boolean => {
     const newErrors: Partial<LoginForm> = {};
@@ -139,7 +139,6 @@ const LoginPage: React.FC = () => {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setErrorMessage("");
 
     if (!validateForm()) {
       return;
@@ -169,7 +168,7 @@ const LoginPage: React.FC = () => {
       // Redirect to presenter dashboard
       navigate("/presenter");
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Login failed");
+      showError(error as any);
     } finally {
       setIsLoading(false);
     }
@@ -228,20 +227,7 @@ const LoginPage: React.FC = () => {
               Sign in to your account to continue
             </Typography>
 
-            {errorMessage && (
-              <Alert 
-                severity="error" 
-                sx={{ 
-                  mb: 3,
-                  borderRadius: 2,
-                  "& .MuiAlert-message": {
-                    fontWeight: 500
-                  }
-                }}
-              >
-                {errorMessage}
-              </Alert>
-            )}
+
 
             <Box component="form" onSubmit={handleSubmit} noValidate>
               <StyledTextField
