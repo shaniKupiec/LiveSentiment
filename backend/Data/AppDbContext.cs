@@ -12,6 +12,7 @@ namespace LiveSentiment.Data
         public DbSet<Label> Labels { get; set; }
         public DbSet<Presentation> Presentations { get; set; }
         public DbSet<Poll> Polls { get; set; }
+        public DbSet<Question> Questions { get; set; }
         public DbSet<Response> Responses { get; set; }
         public DbSet<SentimentAggregate> SentimentAggregates { get; set; }
 
@@ -22,8 +23,9 @@ namespace LiveSentiment.Data
             modelBuilder.Entity<Label>().HasKey(l => l.Id);
             modelBuilder.Entity<Presentation>().HasKey(p => p.Id);
             modelBuilder.Entity<Poll>().HasKey(p => p.Id);
+            modelBuilder.Entity<Question>().HasKey(q => q.Id);
             modelBuilder.Entity<Response>().HasKey(r => r.Id);
-            modelBuilder.Entity<SentimentAggregate>().HasKey(s => s.PollId);
+            modelBuilder.Entity<SentimentAggregate>().HasKey(s => s.QuestionId);
 
             // Label relationships
             modelBuilder.Entity<Label>()
@@ -49,19 +51,31 @@ namespace LiveSentiment.Data
                 .WithMany(pr => pr.Polls)
                 .HasForeignKey(p => p.PresentationId);
 
+            // Question relationships
+            modelBuilder.Entity<Question>()
+                .HasOne(q => q.Presentation)
+                .WithMany(p => p.Questions)
+                .HasForeignKey(q => q.PresentationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             modelBuilder.Entity<Response>()
-                .HasOne(r => r.Poll)
-                .WithMany(p => p.Responses)
-                .HasForeignKey(r => r.PollId);
+                .HasOne(r => r.Question)
+                .WithMany(q => q.Responses)
+                .HasForeignKey(r => r.QuestionId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<SentimentAggregate>()
-                .HasOne(s => s.Poll)
-                .WithOne(p => p.SentimentAggregate)
-                .HasForeignKey<SentimentAggregate>(s => s.PollId);
+                .HasOne(s => s.Question)
+                .WithOne()
+                .HasForeignKey<SentimentAggregate>(s => s.QuestionId);
 
             // Configure JSON properties for PostgreSQL
             modelBuilder.Entity<Poll>()
                 .Property(p => p.Options)
+                .HasColumnType("jsonb");
+
+            modelBuilder.Entity<Question>()
+                .Property(q => q.Configuration)
                 .HasColumnType("jsonb");
 
             modelBuilder.Entity<SentimentAggregate>()

@@ -219,7 +219,125 @@ Use `docker-compose up --build` when:
 
 ---
 
-## 7. Troubleshooting
+## 7. API Usage Examples
+
+### Creating Questions via Swagger
+
+The API provides a Swagger interface at `http://localhost:5000/swagger` for testing endpoints.
+
+#### Endpoint
+**POST** `/api/presentations/{presentationId}/questions`
+
+#### Example JSON Bodies
+
+**1. Multiple Choice (Single Answer)**
+```json
+{
+  "text": "What is your role in the organization?",
+  "type": 1,
+  "configuration": {
+    "options": ["Student", "Teacher", "Administrator", "Other"],
+    "allowOther": false
+  },
+  "enableTextAnalysis": false,
+  "enableSentimentAnalysis": false,
+  "enableEmotionAnalysis": false,
+  "enableKeywordExtraction": false,
+  "order": 1
+}
+```
+
+**2. Open-Ended with NLP Analysis**
+```json
+{
+  "text": "What feedback do you have about the presentation?",
+  "type": 6,
+  "configuration": {
+    "maxLength": 500,
+    "minLength": 10,
+    "placeholder": "Please share your thoughts..."
+  },
+  "enableTextAnalysis": true,
+  "enableSentimentAnalysis": true,
+  "enableEmotionAnalysis": true,
+  "enableKeywordExtraction": true,
+  "order": 2
+}
+```
+
+**3. Word Cloud**
+```json
+{
+  "text": "What words come to mind when you think of this topic?",
+  "type": 7,
+  "configuration": {
+    "maxWords": 3,
+    "minWordLength": 2,
+    "placeholder": "Enter 1-3 words"
+  },
+  "enableTextAnalysis": true,
+  "enableSentimentAnalysis": true,
+  "enableEmotionAnalysis": false,
+  "enableKeywordExtraction": true,
+  "order": 3
+}
+```
+
+**4. Numeric Rating**
+```json
+{
+  "text": "Rate the presentation from 1-10",
+  "type": 3,
+  "configuration": {
+    "minValue": 1,
+    "maxValue": 10,
+    "stepSize": 1,
+    "labels": {
+      "1": "Very Poor",
+      "5": "Average",
+      "10": "Excellent"
+    }
+  },
+  "enableTextAnalysis": false,
+  "enableSentimentAnalysis": false,
+  "enableEmotionAnalysis": false,
+  "enableKeywordExtraction": false,
+  "order": 4
+}
+```
+
+**5. Yes/No Question**
+```json
+{
+  "text": "Did you find this presentation helpful?",
+  "type": 4,
+  "configuration": {},
+  "enableTextAnalysis": false,
+  "enableSentimentAnalysis": false,
+  "enableEmotionAnalysis": false,
+  "enableKeywordExtraction": false,
+  "order": 5
+}
+```
+
+#### Question Types Reference
+- `1` = MultipleChoiceSingle
+- `2` = MultipleChoiceMultiple  
+- `3` = NumericRating
+- `4` = YesNo
+- `5` = SliderScale
+- `6` = OpenEnded
+- `7` = WordCloud
+
+#### Important Notes
+- **NLP Features**: Only text-based questions (type 6=OpenEnded, type 7=WordCloud) can have NLP enabled
+- **Configuration**: The `configuration` field varies by question type and contains type-specific settings
+- **Order**: If set to 0, it will be auto-assigned
+- **Authentication**: You need to be logged in (include your JWT token in the Authorization header)
+
+---
+
+## 8. Troubleshooting
 - If ports are in use, stop other services or change the port in config files.
 - If you change dependencies, rebuild containers: `docker-compose build`.
 - If you change environment variables, restart containers: `docker-compose down && docker-compose up`.

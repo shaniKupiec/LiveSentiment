@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using Microsoft.Extensions.Logging;
 
 namespace LiveSentiment
 {
@@ -80,6 +81,9 @@ namespace LiveSentiment
             
             // Register Label service
             services.AddScoped<ILabelService, LabelService>();
+            
+            // Register Question service
+            services.AddScoped<IQuestionService, QuestionService>();
 
             // Configure JWT Authentication
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

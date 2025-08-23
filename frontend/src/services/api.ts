@@ -2,6 +2,7 @@ import type { SuccessResponse, ErrorResponse } from '../types/error';
 import { ApiError } from '../types/error';
 import type { Presentation, CreatePresentationRequest, UpdatePresentationRequest } from '../types/presentation';
 import type { Label, CreateLabelRequest, UpdateLabelRequest, LabelWithPresentations } from '../types/label';
+import type { Question, CreateQuestionRequest, UpdateQuestionRequest, ReorderQuestionsRequest } from '../types/question';
 
 const API_BASE_URL = 'http://localhost:5000';
 
@@ -222,6 +223,60 @@ class ApiService {
     return this.makeRequest<void>(`/api/labels/${labelId}/reactivate`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
+    });
+  }
+
+  // Question methods
+  async getQuestions(presentationId: string): Promise<Question[]> {
+    return this.makeRequest<Question[]>(`/api/presentations/${presentationId}/questions`, {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+    });
+  }
+
+  async getQuestion(presentationId: string, questionId: string): Promise<Question> {
+    return this.makeRequest<Question>(`/api/presentations/${presentationId}/questions/${questionId}`, {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+    });
+  }
+
+  async createQuestion(presentationId: string, data: CreateQuestionRequest): Promise<Question> {
+    return this.makeRequest<Question>(`/api/presentations/${presentationId}/questions`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateQuestion(presentationId: string, questionId: string, data: UpdateQuestionRequest): Promise<Question> {
+    return this.makeRequest<Question>(`/api/presentations/${presentationId}/questions/${questionId}`, {
+      method: 'PUT',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteQuestion(presentationId: string, questionId: string): Promise<void> {
+    return this.makeRequest<void>(`/api/presentations/${presentationId}/questions/${questionId}`, {
+      method: 'DELETE',
+      headers: this.getAuthHeaders(),
+    });
+  }
+
+  async reorderQuestions(presentationId: string, data: ReorderQuestionsRequest): Promise<void> {
+    return this.makeRequest<void>(`/api/presentations/${presentationId}/questions/reorder`, {
+      method: 'PUT',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+  }
+
+  async toggleQuestionActive(presentationId: string, questionId: string, isActive: boolean): Promise<void> {
+    return this.makeRequest<void>(`/api/presentations/${presentationId}/questions/${questionId}/toggle`, {
+      method: 'PUT',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify({ isActive }),
     });
   }
 

@@ -84,4 +84,10 @@ namespace LiveSentiment.Models
         public string Title { get; set; }
         public DateTime CreatedDate { get; set; }
     }
+
+    // Question-related models for presentations
+    public class PresentationWithQuestionsResponse : PresentationResponse
+    {
+        public List<QuestionSummary> Questions { get; set; } = new();
+    }
 } 

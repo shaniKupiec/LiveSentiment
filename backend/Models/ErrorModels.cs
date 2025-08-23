@@ -38,5 +38,13 @@ namespace LiveSentiment.Models
         // Presentation errors
         public const string PRESENTATION_NOT_FOUND = "PRES_001";
         public const string PRESENTATION_ACCESS_DENIED = "PRES_002";
+        
+        // Question errors
+        public const string QUESTION_NOT_FOUND = "QST_001";
+        public const string QUESTION_ACCESS_DENIED = "QST_002";
+        public const string QUESTION_CONFIGURATION_ERROR = "QST_003";
+        
+        // Access control
+        public const string ACCESS_DENIED = "ACC_001";
     }
 } 

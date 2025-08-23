@@ -1,3 +1,5 @@
+import type { QuestionSummary } from './question';
+
 export interface LabelInfo {
   id: string;
   name: string;
@@ -12,6 +14,7 @@ export interface Presentation {
   lastUpdated: string;
   labelId?: string;
   label?: LabelInfo;
+  questions?: QuestionSummary[];
 }
 
 export interface CreatePresentationRequest {

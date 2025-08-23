@@ -327,6 +327,55 @@ namespace LiveSentiment.Controllers
             return this.Success(new { message = "Presentation deleted successfully" });
         }
 
+        // GET: api/presentations/{id}/with-questions
+        [HttpGet("{id}/with-questions")]
+        public async Task<ActionResult<PresentationWithQuestionsResponse>> GetPresentationWithQuestions(Guid id)
+        {
+            var presenterId = GetCurrentPresenterId();
+            if (presenterId == Guid.Empty)
+            {
+                return this.Unauthorized(ErrorCodes.UNAUTHORIZED, "User not authenticated", "Please log in to access this presentation.");
+            }
+
+            var presentation = await _context.Presentations
+                .Include(p => p.Label)
+                .Include(p => p.Questions.OrderBy(q => q.Order))
+                .FirstOrDefaultAsync(p => p.Id == id && p.PresenterId == presenterId);
+
+            if (presentation == null)
+            {
+                return this.NotFound(ErrorCodes.PRESENTATION_NOT_FOUND, "Presentation not found", "Presentation not found or you don't have access to it.");
+            }
+
+            var response = new PresentationWithQuestionsResponse
+            {
+                Id = presentation.Id,
+                Title = presentation.Title,
+                CreatedDate = presentation.CreatedDate,
+                LastUpdated = presentation.LastUpdated,
+                LabelId = presentation.LabelId,
+                Label = presentation.Label != null ? new LabelInfo
+                {
+                    Id = presentation.Label.Id,
+                    Name = presentation.Label.Name,
+                    Color = presentation.Label.Color,
+                    IsActive = presentation.Label.IsActive
+                } : null,
+                Questions = presentation.Questions.Select(q => new QuestionSummary
+                {
+                    Id = q.Id,
+                    Text = q.Text,
+                    Type = q.Type,
+                    Order = q.Order,
+                    IsActive = q.IsActive,
+    
+                    ResponseCount = q.Responses.Count
+                }).ToList()
+            };
+
+            return this.Success(response);
+        }
+
         private bool PresentationExists(Guid id)
         {
             return _context.Presentations.Any(e => e.Id == id);

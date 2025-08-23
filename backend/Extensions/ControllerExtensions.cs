@@ -33,6 +33,11 @@ namespace LiveSentiment.Extensions
             return controller.Error(errorCode, message, userMessage, 401);
         }
 
+        public static ActionResult Forbidden(this ControllerBase controller, string errorCode, string message, string userMessage)
+        {
+            return controller.Error(errorCode, message, userMessage, 403);
+        }
+
         public static ActionResult BadRequest(this ControllerBase controller, string errorCode, string message, string userMessage)
         {
             return controller.Error(errorCode, message, userMessage, 400);

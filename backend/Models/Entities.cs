@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace LiveSentiment.Models
@@ -50,9 +51,10 @@ namespace LiveSentiment.Models
         public Guid? LabelId { get; set; } // Nullable - presentations can exist without labels
         public Label Label { get; set; }
         public ICollection<Poll> Polls { get; set; }
+        public ICollection<Question> Questions { get; set; } = new List<Question>();
     }
 
-    // Poll attached to a Presentation
+    // Poll attached to a Presentation (keeping for backward compatibility)
     public class Poll
     {
         public Guid Id { get; set; }
@@ -61,30 +63,30 @@ namespace LiveSentiment.Models
         public string Question { get; set; }
         [MaxLength(50)]
         public string Type { get; set; }
-        public JsonObject Options { get; set; }
+        public JsonDocument Options { get; set; }
         public bool Active { get; set; }
         public ICollection<Response> Responses { get; set; }
-        public SentimentAggregate SentimentAggregate { get; set; }
+        // Note: SentimentAggregate now links to Question, not Poll
     }
 
-    // Responses for polls, anonymous audience
+    // Responses for questions, anonymous audience
     public class Response
     {
         public Guid Id { get; set; }
-        public Guid PollId { get; set; }
-        public Poll Poll { get; set; }
+        public Guid QuestionId { get; set; }
+        public Question Question { get; set; }
         public string Value { get; set; }
         public DateTime Timestamp { get; set; }
     }
 
-    // Aggregated results for sentiment, emotion counts, and keyword trends per poll
+    // Aggregated results for sentiment, emotion counts, and keyword trends per question
     public class SentimentAggregate
     {
-        public Guid PollId { get; set; }
-        public Poll Poll { get; set; }
+        public Guid QuestionId { get; set; }
+        public Question Question { get; set; }
         public DateTime AggregatedSince { get; set; }
-        public JsonObject SentimentCounts { get; set; }
-        public JsonObject EmotionCounts { get; set; }
+        public JsonDocument SentimentCounts { get; set; }
+        public JsonDocument EmotionCounts { get; set; }
         public JsonArray Keywords { get; set; }
     }
 } 
