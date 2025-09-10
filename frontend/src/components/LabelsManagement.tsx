@@ -14,14 +14,13 @@ import {
   Tabs,
   Tab
 } from '@mui/material';
-import { Edit, Delete, Add, Warning, RestoreFromTrash } from '@mui/icons-material';
+import { Edit, Delete, Add, RestoreFromTrash } from '@mui/icons-material';
 import type { Label, CreateLabelRequest, UpdateLabelRequest } from '../types/label';
 import { apiService } from '../services/api';
 import LabelForm from './LabelForm';
 import DeleteConfirmationDialog from './DeleteConfirmationDialog';
 
 const LabelsManagement: React.FC = () => {
-  const [labels, setLabels] = useState<Label[]>([]);
   const [allLabels, setAllLabels] = useState<Label[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,11 +38,7 @@ const LabelsManagement: React.FC = () => {
     try {
       setIsLoading(true);
       setError(null);
-      const [activeLabels, allLabelsData] = await Promise.all([
-        apiService.getActiveLabels(),
-        apiService.getAllLabels()
-      ]);
-      setLabels(activeLabels);
+      const allLabelsData = await apiService.getAllLabels();
       setAllLabels(allLabelsData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch labels');
@@ -56,7 +51,6 @@ const LabelsManagement: React.FC = () => {
     try {
       setIsSubmitting(true);
       const newLabel = await apiService.createLabel(data);
-      setLabels(prev => [...prev, newLabel]);
       setAllLabels(prev => [...prev, newLabel]);
       setShowForm(false);
     } catch (err) {
@@ -72,9 +66,6 @@ const LabelsManagement: React.FC = () => {
     try {
       setIsSubmitting(true);
       const updatedLabel = await apiService.updateLabel(editingLabel.id, data);
-      setLabels(prev => prev.map(label => 
-        label.id === editingLabel.id ? updatedLabel : label
-      ));
       setAllLabels(prev => prev.map(label => 
         label.id === editingLabel.id ? updatedLabel : label
       ));
@@ -93,7 +84,6 @@ const LabelsManagement: React.FC = () => {
       setIsSubmitting(true);
       await apiService.deleteLabel(deleteLabel.id);
       // Update both lists - remove from active, mark as inactive in all
-      setLabels(prev => prev.filter(label => label.id !== deleteLabel.id));
       setAllLabels(prev => prev.map(label => 
         label.id === deleteLabel.id ? { ...label, isActive: false } : label
       ));
@@ -130,7 +120,7 @@ const LabelsManagement: React.FC = () => {
     setShowForm(false);
   };
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
   };
 

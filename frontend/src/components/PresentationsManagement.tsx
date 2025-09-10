@@ -15,8 +15,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  IconButton,
-  Tooltip,
   Typography,
   Chip,
   Alert,
@@ -24,7 +22,6 @@ import {
   Stack,
   Tabs,
   Tab,
-  Divider
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -34,7 +31,7 @@ import {
   QuestionAnswer as QuestionIcon
 } from '@mui/icons-material';
 import { apiService } from '../services/api';
-import type { Presentation, PresentationFilters, SortField, SortOrder, PresentationFormData } from '../types/presentation';
+import type { Presentation, PresentationFilters, SortField, PresentationFormData } from '../types/presentation';
 import type { Label } from '../types/label';
 import type { Question } from '../types/question';
 import { formatDate } from '../utils/dateUtils';
@@ -247,7 +244,7 @@ const PresentationsManagement: React.FC = () => {
     try {
       setFormLoading(true);
       setError(null);
-      const newPresentation = await apiService.createPresentation(data);
+      await apiService.createPresentation(data);
       await fetchPresentations();
       setFormOpen(false);
     } catch (error) {
@@ -677,7 +674,7 @@ const PresentationsManagement: React.FC = () => {
 
             {/* Sub-tabs */}
             <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-              <Tabs value={activeSubTab} onChange={(e, newValue) => setActiveSubTab(newValue)}>
+              <Tabs value={activeSubTab} onChange={(_e, newValue) => setActiveSubTab(newValue)}>
                 <Tab label="Presentation Details" />
                 <Tab label="Questions" />
               </Tabs>

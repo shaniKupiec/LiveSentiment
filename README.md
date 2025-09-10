@@ -27,8 +27,8 @@ docker-compose up --build
 ```
 
 - Frontend: [http://localhost:3000](http://localhost:3000)
-- Backend API: [http://localhost:5000](http://localhost:5000)
-- PostgreSQL: localhost:5432 (user: postgres, password: postgres)
+- Backend API: [http://localhost:5000/swagger/index.html](http://localhost:5000/swagger/index.html)
+- pgAdmin: [http://localhost:5050/browser/](http://localhost:5050/browser/)
 
 To stop:
 ```sh

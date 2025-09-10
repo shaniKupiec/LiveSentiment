@@ -14,7 +14,7 @@ import {
   useMediaQuery
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import apiService, { type SignupRequest, type AuthResponse } from "../services/api";
+import apiService from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import { useErrorHandler } from "../components/ErrorHandler";
 
@@ -53,7 +53,7 @@ const GradientBackground = styled(Box)(({ theme }) => ({
   },
 }));
 
-const StyledTextField = styled(TextField)(({ theme }) => ({
+const StyledTextField = styled(TextField)(() => ({
   "& .MuiOutlinedInput-root": {
     borderRadius: 12,
     backgroundColor: "rgba(255, 255, 255, 0.8)",
@@ -96,8 +96,7 @@ const SignupPage: React.FC = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const { showError } = useErrorHandler();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isMobile = useMediaQuery(useTheme().breakpoints.down("sm"));
   
   const [formData, setFormData] = useState<SignupForm>({
     name: "",
@@ -205,7 +204,7 @@ const SignupPage: React.FC = () => {
           width: "100%",
           maxWidth: "100%",
           boxSizing: "border-box",
-          [theme.breakpoints.down("sm")]: {
+          [useTheme().breakpoints.down("sm")]: {
             px: 0,
             mx: 0,
           }

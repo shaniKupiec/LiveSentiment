@@ -21,10 +21,8 @@ import {
   IconButton,
   List,
   ListItem,
-  ListItemText,
   ListItemSecondaryAction,
   Chip,
-  Divider
 } from '@mui/material';
 import { ExpandMore, Add, Delete } from '@mui/icons-material';
 import type { Question, QuestionFormData, QuestionType, MultipleChoiceConfig, NumericRatingConfig, SliderScaleConfig } from '../types/question';
@@ -46,7 +44,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
   onSubmit,
   question,
   isLoading = false,
-  presentationId,
   order
 }) => {
   const [formData, setFormData] = useState<QuestionFormData>({

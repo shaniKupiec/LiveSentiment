@@ -11,9 +11,7 @@ import {
   Select,
   MenuItem,
   FormHelperText,
-  Box,
-  Typography,
-  Chip
+  Box
 } from '@mui/material';
 import type { Presentation, PresentationFormData } from '../types/presentation';
 import type { Label } from '../types/label';
@@ -139,10 +137,6 @@ const PresentationForm: React.FC<PresentationFormProps> = ({
     }
   };
 
-  const getLabelDisplayName = (labelId: string) => {
-    const label = labels.find(l => l.id === labelId);
-    return label ? label.name : 'Unknown Label';
-  };
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
