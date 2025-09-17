@@ -14,5 +14,5 @@ COPY . ./
 
 EXPOSE 80
 
-# Use dotnet watch for hot reloading
-CMD ["dotnet", "watch", "run"] 
+# Use dotnet watch for hot reloading with proper signal handling
+CMD ["dotnet", "watch", "run", "--no-hot-reload"] 
