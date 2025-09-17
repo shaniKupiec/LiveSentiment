@@ -28,7 +28,8 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Search as SearchIcon,
-  QuestionAnswer as QuestionIcon
+  QuestionAnswer as QuestionIcon,
+  PlayArrow as StartIcon
 } from '@mui/icons-material';
 import { apiService } from '../services/api';
 import type { Presentation, PresentationFilters, SortField, PresentationFormData } from '../types/presentation';
@@ -38,6 +39,7 @@ import { formatDate } from '../utils/dateUtils';
 import PresentationForm from './PresentationForm';
 import DeleteConfirmationDialog from './DeleteConfirmationDialog';
 import QuestionsManagement from './QuestionsManagement';
+import StartPresentationDialog from './StartPresentationDialog';
 
 const PresentationsManagement: React.FC = () => {
   const [presentations, setPresentations] = useState<Presentation[]>([]);
@@ -58,6 +60,10 @@ const PresentationsManagement: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingPresentation, setDeletingPresentation] = useState<Presentation | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  
+  // Start presentation states
+  const [startDialogOpen, setStartDialogOpen] = useState(false);
+  const [startingPresentation, setStartingPresentation] = useState<Presentation | null>(null);
   
   // Questions management states
   const [selectedPresentation, setSelectedPresentation] = useState<Presentation | null>(null);
@@ -299,6 +305,11 @@ const PresentationsManagement: React.FC = () => {
     setDeleteDialogOpen(true);
   }, []);
 
+  const openStartDialog = useCallback((presentation: Presentation) => {
+    setStartingPresentation(presentation);
+    setStartDialogOpen(true);
+  }, []);
+
   const closeForm = useCallback(() => {
     setFormOpen(false);
     setEditingPresentation(null);
@@ -307,6 +318,11 @@ const PresentationsManagement: React.FC = () => {
   const closeDeleteDialog = useCallback(() => {
     setDeleteDialogOpen(false);
     setDeletingPresentation(null);
+  }, []);
+
+  const closeStartDialog = useCallback(() => {
+    setStartDialogOpen(false);
+    setStartingPresentation(null);
   }, []);
 
   const handleSort = useCallback((field: SortField) => {
@@ -559,6 +575,24 @@ const PresentationsManagement: React.FC = () => {
                             <Button
                               variant="contained"
                               size="small"
+                              startIcon={<StartIcon />}
+                              onClick={() => openStartDialog(presentation)}
+                              sx={{ 
+                                minWidth: 'auto',
+                                px: 2,
+                                py: 0.5,
+                                fontSize: '0.75rem',
+                                backgroundColor: '#4caf50',
+                                '&:hover': {
+                                  backgroundColor: '#388e3c'
+                                }
+                              }}
+                            >
+                              Start
+                            </Button>
+                            <Button
+                              variant="contained"
+                              size="small"
                               startIcon={<QuestionIcon />}
                               onClick={() => handleManageQuestions(presentation)}
                               sx={{ 
@@ -758,6 +792,13 @@ const PresentationsManagement: React.FC = () => {
         onConfirm={handleDeletePresentation}
         title={deletingPresentation?.title || ''}
         isLoading={deleteLoading}
+      />
+
+      {/* Start Presentation Dialog */}
+      <StartPresentationDialog
+        open={startDialogOpen}
+        onClose={closeStartDialog}
+        presentation={startingPresentation}
       />
     </Box>
   );
