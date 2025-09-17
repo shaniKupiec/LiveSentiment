@@ -1,3 +1,5 @@
+import { config } from '../config/environment';
+
 export interface ErrorResponse {
   errorCode: string;
   message: string;
@@ -34,6 +36,6 @@ export class ApiError extends Error implements ApiErrorInterface {
   }
 }
 
-export const DEFAULT_ERROR_MESSAGE = "Something went wrong. Please try again later.";
-export const NETWORK_ERROR_MESSAGE = "Unable to connect to the server. Please check your internet connection and try again.";
-export const SERVER_ERROR_MESSAGE = "Server error occurred. Please try again later."; 
+export const DEFAULT_ERROR_MESSAGE = config.errorMessages.default;
+export const NETWORK_ERROR_MESSAGE = config.errorMessages.network;
+export const SERVER_ERROR_MESSAGE = config.errorMessages.server; 

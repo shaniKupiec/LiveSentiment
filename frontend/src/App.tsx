@@ -54,22 +54,18 @@ const AppRoutes: React.FC = () => {
           }
         />
 
+        {/* Public audience route (must come before protected /audience route) */}
+        <Route
+          path="/audience/:presentationId"
+          element={<AudienceView />}
+        />
+
         {/* Protected routes */}
         <Route
           path="/presenter"
           element={
             isAuthenticated && userRole === "presenter" ? (
               <PresenterDashboard user={user} onLogout={logout} />
-            ) : (
-              <Navigate to="/login" />
-            )
-          }
-        />
-        <Route
-          path="/audience"
-          element={
-            isAuthenticated && userRole === "audience" ? (
-              <AudienceView user={user} onLogout={logout} />
             ) : (
               <Navigate to="/login" />
             )

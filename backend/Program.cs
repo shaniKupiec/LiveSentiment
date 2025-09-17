@@ -20,4 +20,16 @@ if (app.Environment.IsDevelopment())
 
 startup.Configure(app, app.Environment);
 
+// Configure graceful shutdown
+var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+lifetime.ApplicationStopping.Register(() =>
+{
+    Console.WriteLine("Application is stopping...");
+});
+
+lifetime.ApplicationStopped.Register(() =>
+{
+    Console.WriteLine("Application has stopped.");
+});
+
 app.Run();
