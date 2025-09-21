@@ -21,9 +21,13 @@ This will start the backend, frontend, and database together.
 
 ```sh
 # From the project root
-# Build and start all services
+# Build and start all services (Production)
 
 docker-compose up --build
+
+# For development with hot reloading
+
+docker-compose -f docker-compose.dev.yml up --build
 ```
 
 - Frontend: [http://localhost:3000](http://localhost:3000)
@@ -76,6 +80,7 @@ dotnet restore
 
 - Build all containers: `docker-compose build`
 - Start all containers: `docker-compose up`
+- Start development containers (with hot reload): `docker-compose -f docker-compose.dev.yml up --build`
 - Stop all containers: `docker-compose down`
 - Run frontend dev server: `npm run dev` (in `frontend`)
 - Run backend dev server: `dotnet run` (in `backend`)
