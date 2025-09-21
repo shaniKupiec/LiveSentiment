@@ -3,8 +3,7 @@ import { ApiError } from '../types/error';
 import type { Presentation, CreatePresentationRequest, UpdatePresentationRequest } from '../types/presentation';
 import type { Label, CreateLabelRequest, UpdateLabelRequest, LabelWithPresentations } from '../types/label';
 import type { Question, CreateQuestionRequest, UpdateQuestionRequest, ReorderQuestionsRequest } from '../types/question';
-
-const API_BASE_URL = 'http://localhost:5000';
+import { config } from '../config/environment';
 
 export interface LoginRequest {
   email: string;
@@ -27,7 +26,7 @@ export interface AuthResponse {
 class ApiService {
   private baseUrl: string;
 
-  constructor(baseUrl: string = API_BASE_URL) {
+  constructor(baseUrl: string = config.apiBaseUrl) {
     this.baseUrl = baseUrl;
   }
 
