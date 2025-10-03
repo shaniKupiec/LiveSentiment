@@ -26,6 +26,7 @@ namespace LiveSentiment
             var fullConnectionString = Configuration.GetConnectionString("DefaultConnection");
             if (!string.IsNullOrEmpty(fullConnectionString))
             {
+                Console.WriteLine("Using full connection string from DefaultConnection");
                 return fullConnectionString;
             }
 
@@ -37,7 +38,17 @@ namespace LiveSentiment
             var password = Configuration["DB_PASSWORD"] ?? "postgres";
             var sslMode = Configuration["DB_SSL_MODE"] ?? "Require";
 
-            return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode={sslMode};";
+            var connectionString = $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode={sslMode};";
+            
+            Console.WriteLine("Built connection string from individual components:");
+            Console.WriteLine($"Host: {host}");
+            Console.WriteLine($"Port: {port}");
+            Console.WriteLine($"Database: {database}");
+            Console.WriteLine($"Username: {username}");
+            Console.WriteLine($"SSL Mode: {sslMode}");
+            Console.WriteLine($"Full connection string: {connectionString.Replace(password, "***")}");
+
+            return connectionString;
         }
 
         // Configures services and middleware
