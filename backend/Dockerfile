@@ -18,8 +18,16 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y netcat-openbsd && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app/out ./
-COPY entrypoint.sh ./
-RUN chmod +x entrypoint.sh
 
-EXPOSE 80
-ENTRYPOINT ["./entrypoint.sh"] 
+# Create a simple startup script for Render
+RUN echo '#!/bin/bash\n\
+echo "Starting LiveSentiment Backend..."\n\
+echo "Waiting for database..."\n\
+sleep 5\n\
+echo "Running database migrations..."\n\
+dotnet LiveSentiment.dll --migrate\n\
+echo "Starting application..."\n\
+dotnet LiveSentiment.dll' > start.sh && chmod +x start.sh
+
+EXPOSE 10000
+CMD ["./start.sh"] 
