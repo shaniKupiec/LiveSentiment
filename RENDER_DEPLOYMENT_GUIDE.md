@@ -12,8 +12,10 @@
 # Make sure all your changes are committed
 git add .
 git commit -m "Prepare for Render deployment"
-git push origin main
+git push origin deploy  # or your branch name
 ```
+
+**Note**: You can deploy from any branch. When creating services on Render, select your branch (e.g., `deploy`) instead of `main`.
 
 ### 2. Create Render.com Account
 1. Go to [render.com](https://render.com)
@@ -39,6 +41,7 @@ git push origin main
    - **Name**: `livesentiment-backend`
    - **Environment**: `Docker`
    - **Dockerfile Path**: `./backend/Dockerfile`
+   - **Branch**: `deploy` (or your branch name)
    - **Plan**: Free
 5. Add Environment Variables:
    ```
@@ -59,6 +62,7 @@ git push origin main
    - **Name**: `livesentiment-frontend`
    - **Environment**: `Docker`
    - **Dockerfile Path**: `./frontend/Dockerfile`
+   - **Branch**: `deploy` (or your branch name)
    - **Plan**: Free
 5. Add Environment Variables:
    ```
