@@ -4,8 +4,16 @@ WORKDIR /app
 
 # Copy everything and restore
 COPY . ./
-RUN dotnet restore
-RUN dotnet publish -c Release -o out
+
+# List files to debug
+RUN ls -la
+
+# Try to find the project file
+RUN find . -name "*.csproj" -type f
+
+# Restore with explicit project file
+RUN dotnet restore LiveSentiment.csproj
+RUN dotnet publish LiveSentiment.csproj -c Release -o out
 
 # Build runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
