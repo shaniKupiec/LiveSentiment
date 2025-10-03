@@ -86,7 +86,7 @@ namespace LiveSentiment
             {
                 options.AddPolicy("AllowFrontend",
                     builder => builder
-                        .WithOrigins("http://localhost:3000", "http://localhost:5173")
+                        .WithOrigins("http://localhost:3000", "http://localhost:5173", "https://livesentiment-frontend.onrender.com")
                         .AllowAnyHeader()
                         .AllowAnyMethod()
                         .AllowCredentials());
