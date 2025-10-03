@@ -22,8 +22,10 @@ COPY --from=build /app/out ./
 # Create a simple startup script for Render
 RUN echo '#!/bin/bash\n\
 echo "Starting LiveSentiment Backend..."\n\
-echo "Waiting for database..."\n\
-sleep 5\n\
+echo "Waiting for database connection..."\n\
+sleep 10\n\
+echo "Testing database connection..."\n\
+dotnet LiveSentiment.dll --test-db\n\
 echo "Running database migrations..."\n\
 dotnet LiveSentiment.dll --migrate\n\
 echo "Starting application..."\n\
