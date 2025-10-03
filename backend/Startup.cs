@@ -22,15 +22,7 @@ namespace LiveSentiment
 
         private string BuildConnectionString()
         {
-            // Try to get the full connection string first (for backward compatibility)
-            var fullConnectionString = Configuration.GetConnectionString("DefaultConnection");
-            if (!string.IsNullOrEmpty(fullConnectionString))
-            {
-                Console.WriteLine("Using full connection string from DefaultConnection");
-                return fullConnectionString;
-            }
-
-            // Build connection string from individual components
+            // Build connection string from environment variables
             var host = Configuration["DB_HOST"] ?? "localhost";
             var port = Configuration["DB_PORT"] ?? "5432";
             var database = Configuration["DB_NAME"] ?? "livesentiment";
@@ -38,17 +30,7 @@ namespace LiveSentiment
             var password = Configuration["DB_PASSWORD"] ?? "postgres";
             var sslMode = Configuration["DB_SSL_MODE"] ?? "Require";
 
-            var connectionString = $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode={sslMode};";
-            
-            Console.WriteLine("Built connection string from individual components:");
-            Console.WriteLine($"Host: {host}");
-            Console.WriteLine($"Port: {port}");
-            Console.WriteLine($"Database: {database}");
-            Console.WriteLine($"Username: {username}");
-            Console.WriteLine($"SSL Mode: {sslMode}");
-            Console.WriteLine($"Full connection string: {connectionString.Replace(password, "***")}");
-
-            return connectionString;
+            return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode={sslMode};";
         }
 
         // Configures services and middleware
