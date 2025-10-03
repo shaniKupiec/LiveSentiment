@@ -20,6 +20,26 @@ namespace LiveSentiment
         public IConfiguration Configuration { get; }
         public Startup(IConfiguration configuration) => Configuration = configuration;
 
+        private string BuildConnectionString()
+        {
+            // Try to get the full connection string first (for backward compatibility)
+            var fullConnectionString = Configuration.GetConnectionString("DefaultConnection");
+            if (!string.IsNullOrEmpty(fullConnectionString))
+            {
+                return fullConnectionString;
+            }
+
+            // Build connection string from individual components
+            var host = Configuration["DB_HOST"] ?? "localhost";
+            var port = Configuration["DB_PORT"] ?? "5432";
+            var database = Configuration["DB_NAME"] ?? "livesentiment";
+            var username = Configuration["DB_USER"] ?? "postgres";
+            var password = Configuration["DB_PASSWORD"] ?? "postgres";
+            var sslMode = Configuration["DB_SSL_MODE"] ?? "Require";
+
+            return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode={sslMode};";
+        }
+
         // Configures services and middleware
         public void ConfigureServices(IServiceCollection services)
         {
@@ -63,7 +83,10 @@ namespace LiveSentiment
 
             // Configure EF Core with PostgreSQL
             services.AddDbContext<AppDbContext>(options =>
-                options.UseNpgsql(Configuration.GetConnectionString("DefaultConnection")));
+            {
+                var connectionString = BuildConnectionString();
+                options.UseNpgsql(connectionString);
+            });
 
             // Add CORS policy for frontend communication
             services.AddCors(options =>
