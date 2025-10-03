@@ -29,7 +29,7 @@ services:
     dockerfilePath: ./frontend/Dockerfile
     plan: free
     envVars:
-      - key: REACT_APP_API_URL
+      - key: VITE_API_URL
         fromService:
           type: web
           name: livesentiment-backend
