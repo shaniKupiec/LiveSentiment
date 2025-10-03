@@ -8,7 +8,7 @@ export const config = {
   // API configuration
   apiBaseUrl: import.meta.env.DEV 
     ? 'http://localhost:5000' 
-    : import.meta.env.VITE_API_URL || 'https://livesentiment-backend.onrender.com',
+    : '', // Use relative URLs in production - nginx will proxy to backend
 
   // Environment type
   isDevelopment: import.meta.env.DEV,
