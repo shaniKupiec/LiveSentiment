@@ -47,7 +47,12 @@ git push origin deploy  # or your branch name
    ```
    ASPNETCORE_ENVIRONMENT=Production
    ASPNETCORE_URLS=http://0.0.0.0:10000
-   ConnectionStrings__DefaultConnection=[Your PostgreSQL connection string]
+   DB_HOST=dpg-d3fp6evfte5s73dcjbd0-a
+   DB_PORT=5432
+   DB_NAME=livesentiment_db
+   DB_USER=livesentiment_db_user
+   DB_PASSWORD=[Your database password from Render]
+   DB_SSL_MODE=Require
    Jwt__Key=[Generate a secure random key - at least 32 characters]
    Jwt__Issuer=LiveSentiment
    Jwt__Audience=LiveSentiment
@@ -83,7 +88,12 @@ git push origin deploy  # or your branch name
 |----------|-------------|---------|
 | `ASPNETCORE_ENVIRONMENT` | Environment setting | `Production` |
 | `ASPNETCORE_URLS` | Server binding | `http://0.0.0.0:10000` |
-| `ConnectionStrings__DefaultConnection` | Database connection | `Host=...;Database=...;Username=...;Password=...` |
+| `DB_HOST` | Database hostname | `dpg-d3fp6evfte5s73dcjbd0-a` |
+| `DB_PORT` | Database port | `5432` |
+| `DB_NAME` | Database name | `livesentiment_db` |
+| `DB_USER` | Database username | `livesentiment_db_user` |
+| `DB_PASSWORD` | Database password | `W1...........` |
+| `DB_SSL_MODE` | SSL connection mode | `Require` |
 | `Jwt__Key` | JWT secret key | `your-super-secret-key-32-chars-min` |
 | `Jwt__Issuer` | JWT issuer | `LiveSentiment` |
 | `Jwt__Audience` | JWT audience | `LiveSentiment` |
