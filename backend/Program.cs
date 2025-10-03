@@ -14,35 +14,6 @@ startup.ConfigureServices(builder.Services);
 
 var app = builder.Build();
 
-// Handle database test flag
-if (args.Contains("--test-db"))
-{
-    Console.WriteLine("Testing database connection...");
-    using (var scope = app.Services.CreateScope())
-    {
-        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        try
-        {
-            var canConnect = context.Database.CanConnect();
-            if (canConnect)
-            {
-                Console.WriteLine("Database connection successful!");
-            }
-            else
-            {
-                Console.WriteLine("Database connection failed!");
-                Environment.Exit(1);
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Database connection test failed: {ex.Message}");
-            Environment.Exit(1);
-        }
-    }
-    return; // Exit after test
-}
-
 // Handle migration flag for Render deployment
 if (args.Contains("--migrate"))
 {
@@ -52,21 +23,12 @@ if (args.Contains("--migrate"))
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         try
         {
-            // Test connection first
-            var canConnect = context.Database.CanConnect();
-            if (!canConnect)
-            {
-                Console.WriteLine("Cannot connect to database. Skipping migrations.");
-                return;
-            }
-            
             context.Database.Migrate();
             Console.WriteLine("Database migrations completed successfully.");
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Migration failed: {ex.Message}");
-            Console.WriteLine("Continuing without migrations...");
             // Don't exit, let the app start anyway
         }
     }
