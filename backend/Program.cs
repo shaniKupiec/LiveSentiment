@@ -4,9 +4,28 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure the application to listen on Render's port
-var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
-builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+// Configure the application to listen on the appropriate port based on environment
+if (builder.Environment.IsProduction())
+{
+    // In production (Render), use the PORT environment variable
+    var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
+    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+}
+else
+{
+    // In development, check if running in Docker or locally
+    var isDocker = Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true";
+    if (isDocker)
+    {
+        // In Docker development, bind to 0.0.0.0 to be accessible from outside container
+        builder.WebHost.UseUrls("http://0.0.0.0:5000");
+    }
+    else
+    {
+        // In local development, use localhost
+        builder.WebHost.UseUrls("http://localhost:5000");
+    }
+}
 
 // Add services to the container.
 var startup = new Startup(builder.Configuration);
