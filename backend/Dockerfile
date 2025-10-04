@@ -26,7 +26,7 @@ sleep 5\n\
 echo "Running database migrations..."\n\
 dotnet LiveSentiment.dll --migrate\n\
 echo "Starting application..."\n\
-dotnet LiveSentiment.dll' > start.sh && chmod +x start.sh
+dotnet LiveSentiment.dll --urls="http://0.0.0.0:${PORT:-10000}"' > start.sh && chmod +x start.sh
 
 EXPOSE 10000
 CMD ["./start.sh"] 
