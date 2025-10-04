@@ -71,7 +71,7 @@ git push origin deploy  # or your branch name
    - **Plan**: Free
 5. Add Environment Variables:
    ```
-   REACT_APP_API_URL=https://livesentiment-backend.onrender.com
+   VITE_API_URL=https://livesentiment-backend.onrender.com
    ```
 6. Click **"Create Web Service"**
 
@@ -101,7 +101,7 @@ git push origin deploy  # or your branch name
 ### Frontend Environment Variables
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `REACT_APP_API_URL` | Backend API URL | `https://livesentiment-backend.onrender.com` |
+| `VITE_API_URL` | Backend API URL | `https://livesentiment-backend.onrender.com` |
 
 ## Deployment Process
 1. **Build**: Render builds your Docker containers

@@ -71,10 +71,10 @@ Jwt__Audience=LiveSentiment
 
 ### Environment Variables
 ```bash
-BACKEND_URL=https://livesentiment-backend.onrender.com
+VITE_API_URL=https://livesentiment-backend.onrender.com
 ```
 
-**Note**: The frontend now uses nginx to proxy API requests to the backend, so no `VITE_API_URL` is needed.
+**Note**: The frontend uses `VITE_API_URL` to configure the API base URL for the React application. This is used by the frontend to make API calls directly to the backend.
 
 ## Database Configuration
 
@@ -248,7 +248,7 @@ dotnet LiveSentiment.dll --migrate
 ### Frontend Variables
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `BACKEND_URL` | Backend API URL for nginx proxy | `https://livesentiment-backend.onrender.com` |
+| `VITE_API_URL` | Backend API URL for frontend | `https://livesentiment-backend.onrender.com` |
 
 ---
 
