@@ -22,15 +22,27 @@ namespace LiveSentiment
 
         private string BuildConnectionString()
         {
-            // Build connection string from environment variables
-            var host = Configuration["DB_HOST"] ?? "localhost";
-            var port = Configuration["DB_PORT"] ?? "5432";
-            var database = Configuration["DB_NAME"] ?? "livesentiment";
-            var username = Configuration["DB_USER"] ?? "postgres";
-            var password = Configuration["DB_PASSWORD"] ?? "postgres";
-            var sslMode = Configuration["DB_SSL_MODE"] ?? "Require";
+            // Check if we're in production (Render) or development
+            var isProduction = Configuration["ASPNETCORE_ENVIRONMENT"] == "Production";
+            
+            if (isProduction)
+            {
+                // Build connection string from environment variables for production
+                var host = Configuration["DB_HOST"] ?? "localhost";
+                var port = Configuration["DB_PORT"] ?? "5432";
+                var database = Configuration["DB_NAME"] ?? "livesentiment";
+                var username = Configuration["DB_USER"] ?? "postgres";
+                var password = Configuration["DB_PASSWORD"] ?? "postgres";
+                var sslMode = Configuration["DB_SSL_MODE"] ?? "Require";
 
-            return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode={sslMode};";
+                return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode={sslMode};";
+            }
+            else
+            {
+                // Use the connection string from appsettings for development
+                return Configuration.GetConnectionString("DefaultConnection") ?? 
+                       "Host=localhost;Port=5432;Database=livesentiment;Username=postgres;Password=postgres;SSL Mode=Disable;";
+            }
         }
 
         // Configures services and middleware
