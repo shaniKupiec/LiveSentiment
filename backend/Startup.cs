@@ -40,8 +40,7 @@ namespace LiveSentiment
             else
             {
                 // Use the connection string from appsettings for development
-                return Configuration.GetConnectionString("DefaultConnection") ?? 
-                       "Host=localhost;Port=5432;Database=livesentiment;Username=postgres;Password=postgres;SSL Mode=Disable;";
+                return Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("DefaultConnection string not found in configuration");
             }
         }
 
