@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend:
     build: 
@@ -11,10 +9,11 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - DOTNET_RUNNING_IN_CONTAINER=true
       - ConnectionStrings__DefaultConnection=Host=db;Database=livesentiment;Username=postgres;Password=postgres
-    volumes:
-      - ./backend:/app
-      - /app/bin
-      - /app/obj
+    # Temporarily disable volume mounts to avoid I/O errors on Windows
+    # volumes:
+    #   - ./backend:/app:delegated
+    #   - /app/bin
+    #   - /app/obj
     depends_on:
       - db
     stop_grace_period: 30s
@@ -25,9 +24,10 @@ services:
       dockerfile: Dockerfile.dev
     ports:
       - "5173:5173"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
+    # Temporarily disable volume mounts to avoid I/O errors on Windows
+    # volumes:
+    #   - ./frontend:/app:delegated
+    #   - /app/node_modules
     environment:
       - CHOKIDAR_USEPOLLING=true
     depends_on:
