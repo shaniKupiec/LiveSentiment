@@ -77,8 +77,7 @@ namespace LiveSentiment.Controllers
                 Id = Guid.NewGuid(),
                 Name = request.Name,
                 Email = request.Email,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-                LoginMethod = "email"
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password)
             };
 
             _context.Presenters.Add(presenter);
