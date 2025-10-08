@@ -11,7 +11,6 @@ namespace LiveSentiment.Data
         public DbSet<Presenter> Presenters { get; set; }
         public DbSet<Label> Labels { get; set; }
         public DbSet<Presentation> Presentations { get; set; }
-        public DbSet<Poll> Polls { get; set; }
         public DbSet<Question> Questions { get; set; }
         public DbSet<Response> Responses { get; set; }
         public DbSet<SentimentAggregate> SentimentAggregates { get; set; }
@@ -22,7 +21,6 @@ namespace LiveSentiment.Data
             modelBuilder.Entity<Presenter>().HasKey(p => p.Id);
             modelBuilder.Entity<Label>().HasKey(l => l.Id);
             modelBuilder.Entity<Presentation>().HasKey(p => p.Id);
-            modelBuilder.Entity<Poll>().HasKey(p => p.Id);
             modelBuilder.Entity<Question>().HasKey(q => q.Id);
             modelBuilder.Entity<Response>().HasKey(r => r.Id);
             modelBuilder.Entity<SentimentAggregate>().HasKey(s => s.QuestionId);
@@ -46,10 +44,6 @@ namespace LiveSentiment.Data
                 .HasForeignKey(p => p.LabelId)
                 .OnDelete(DeleteBehavior.SetNull); // If label is deleted, presentation keeps labelId as null
 
-            modelBuilder.Entity<Poll>()
-                .HasOne(p => p.Presentation)
-                .WithMany(pr => pr.Polls)
-                .HasForeignKey(p => p.PresentationId);
 
             // Question relationships
             modelBuilder.Entity<Question>()
@@ -70,9 +64,6 @@ namespace LiveSentiment.Data
                 .HasForeignKey<SentimentAggregate>(s => s.QuestionId);
 
             // Configure JSON properties for PostgreSQL
-            modelBuilder.Entity<Poll>()
-                .Property(p => p.Options)
-                .HasColumnType("jsonb");
 
             modelBuilder.Entity<Question>()
                 .Property(q => q.Configuration)
