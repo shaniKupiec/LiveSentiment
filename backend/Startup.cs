@@ -20,6 +20,30 @@ namespace LiveSentiment
         public IConfiguration Configuration { get; }
         public Startup(IConfiguration configuration) => Configuration = configuration;
 
+        private string BuildConnectionString()
+        {
+            // Check if we're in production (Render) or development
+            var isProduction = Configuration["ASPNETCORE_ENVIRONMENT"] == "Production";
+            
+            if (isProduction)
+            {
+                // Build connection string from environment variables for production
+                var host = Configuration["DB_HOST"] ?? "localhost";
+                var port = Configuration["DB_PORT"] ?? "5432";
+                var database = Configuration["DB_NAME"] ?? "livesentiment";
+                var username = Configuration["DB_USER"] ?? "postgres";
+                var password = Configuration["DB_PASSWORD"] ?? "postgres";
+                var sslMode = Configuration["DB_SSL_MODE"] ?? "Require";
+
+                return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode={sslMode};";
+            }
+            else
+            {
+                // Use the connection string from appsettings for development
+                return Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("DefaultConnection string not found in configuration");
+            }
+        }
+
         // Configures services and middleware
         public void ConfigureServices(IServiceCollection services)
         {
@@ -63,14 +87,17 @@ namespace LiveSentiment
 
             // Configure EF Core with PostgreSQL
             services.AddDbContext<AppDbContext>(options =>
-                options.UseNpgsql(Configuration.GetConnectionString("DefaultConnection")));
+            {
+                var connectionString = BuildConnectionString();
+                options.UseNpgsql(connectionString);
+            });
 
             // Add CORS policy for frontend communication
             services.AddCors(options =>
             {
                 options.AddPolicy("AllowFrontend",
                     builder => builder
-                        .WithOrigins("http://localhost:3000", "http://localhost:5173")
+                        .WithOrigins("http://localhost:3000", "http://localhost:5173", "https://livesentiment-frontend.onrender.com")
                         .AllowAnyHeader()
                         .AllowAnyMethod()
                         .AllowCredentials());
