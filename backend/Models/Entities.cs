@@ -16,8 +16,6 @@ namespace LiveSentiment.Models
         public string Email { get; set; }
         [MaxLength(255)]
         public string PasswordHash { get; set; }
-        [MaxLength(50)]
-        public string LoginMethod { get; set; }
         public ICollection<Presentation> Presentations { get; set; }
         public ICollection<Label> Labels { get; set; }
     }
@@ -50,24 +48,12 @@ namespace LiveSentiment.Models
         public DateTime LastUpdated { get; set; }
         public Guid? LabelId { get; set; } // Nullable - presentations can exist without labels
         public Label Label { get; set; }
-        public ICollection<Poll> Polls { get; set; }
+        public bool IsLive { get; set; } = false;
+        public DateTime? LiveStartedAt { get; set; }
+        public DateTime? LiveEndedAt { get; set; }
         public ICollection<Question> Questions { get; set; } = new List<Question>();
     }
 
-    // Poll attached to a Presentation (keeping for backward compatibility)
-    public class Poll
-    {
-        public Guid Id { get; set; }
-        public Guid PresentationId { get; set; }
-        public Presentation Presentation { get; set; }
-        public string Question { get; set; }
-        [MaxLength(50)]
-        public string Type { get; set; }
-        public JsonDocument Options { get; set; }
-        public bool Active { get; set; }
-        public ICollection<Response> Responses { get; set; }
-        // Note: SentimentAggregate now links to Question, not Poll
-    }
 
     // Responses for questions, anonymous audience
     public class Response
@@ -75,6 +61,8 @@ namespace LiveSentiment.Models
         public Guid Id { get; set; }
         public Guid QuestionId { get; set; }
         public Question Question { get; set; }
+        [MaxLength(255)]
+        public string? SessionId { get; set; }
         public string Value { get; set; }
         public DateTime Timestamp { get; set; }
     }
