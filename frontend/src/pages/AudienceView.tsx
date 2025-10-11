@@ -11,14 +11,11 @@ import {
   Chip,
   Button,
   TextField,
-  FormControl,
-  FormLabel,
   RadioGroup,
   FormControlLabel,
   Radio,
   Checkbox,
-  Slider,
-  Card
+  Slider
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useParams } from "react-router-dom";
@@ -31,13 +28,6 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
   marginTop: theme.spacing(3),
   borderRadius: theme.spacing(2),
-}));
-
-const QuestionCard = styled(Card)(({ theme }) => ({
-  margin: theme.spacing(2, 0),
-  padding: theme.spacing(2),
-  backgroundColor: theme.palette.primary.light,
-  color: theme.palette.primary.contrastText,
 }));
 
 interface PresentationInfo {
@@ -257,40 +247,28 @@ const AudienceView: React.FC = () => {
     switch (type) {
       case QuestionType.MultipleChoiceSingle:
         return (
-          <FormControl component="fieldset" fullWidth>
-            <FormLabel component="legend">Select one option:</FormLabel>
-            <RadioGroup
-              value={response}
-              onChange={(e) => setResponse(e.target.value)}
-            >
-              {configuration?.options?.map((option: string, index: number) => (
-                <FormControlLabel
-                  key={index}
-                  value={option}
-                  control={<Radio />}
-                  label={option}
-                />
-              ))}
-            </RadioGroup>
-          </FormControl>
+          <RadioGroup value={response} onChange={e => setResponse(e.target.value)}>
+            {configuration?.options?.map((option: string, index: number) => (
+              <FormControlLabel key={index} value={option} control={<Radio />} label={option} />
+            ))}
+          </RadioGroup>
         );
 
       case QuestionType.MultipleChoiceMultiple:
+        const currentResponses = response ? response.split(',') : [];
         return (
-          <FormControl component="fieldset" fullWidth>
-            <FormLabel component="legend">Select all that apply:</FormLabel>
+          <>
             {configuration?.options?.map((option: string, index: number) => (
               <FormControlLabel
                 key={index}
                 control={
                   <Checkbox
-                    checked={response.includes(option)}
-                    onChange={(e) => {
-                      const currentResponses = response ? response.split(',') : [];
+                    checked={currentResponses.includes(option)}
+                    onChange={e => {
                       if (e.target.checked) {
                         setResponse([...currentResponses, option].join(','));
                       } else {
-                        setResponse(currentResponses.filter(r => r !== option).join(','));
+                        setResponse(currentResponses.filter((v: string) => v !== option).join(','));
                       }
                     }}
                   />
@@ -298,58 +276,74 @@ const AudienceView: React.FC = () => {
                 label={option}
               />
             ))}
-          </FormControl>
+          </>
+        );
+
+      case QuestionType.NumericRating:
+        const minRating = configuration?.minValue || 1;
+        const maxRating = configuration?.maxValue || 10;
+        return (
+          <Box sx={{ px: 2 }}>
+            <Typography gutterBottom>
+              {configuration?.labels?.min} ({minRating}) - {configuration?.labels?.max} ({maxRating})
+            </Typography>
+            <Slider
+              min={minRating}
+              max={maxRating}
+              step={configuration?.step || 1}
+              value={response === "" ? minRating : parseInt(response)}
+              onChange={(_, v) => setResponse(v.toString())}
+              valueLabelDisplay="auto"
+            />
+          </Box>
         );
 
       case QuestionType.YesNo:
         return (
-          <FormControl component="fieldset" fullWidth>
-            <FormLabel component="legend">Choose:</FormLabel>
-            <RadioGroup
-              value={response}
-              onChange={(e) => setResponse(e.target.value)}
-            >
-              <FormControlLabel value="Yes" control={<Radio />} label="Yes" />
-              <FormControlLabel value="No" control={<Radio />} label="No" />
-            </RadioGroup>
-          </FormControl>
+          <RadioGroup value={response} onChange={e => setResponse(e.target.value)}>
+            <FormControlLabel value="Yes" control={<Radio />} label="Yes" />
+            <FormControlLabel value="No" control={<Radio />} label="No" />
+          </RadioGroup>
         );
 
-      case QuestionType.NumericRating:
       case QuestionType.SliderScale:
-        const min = configuration?.minValue || 1;
-        const max = configuration?.maxValue || 10;
+        const minScale = configuration?.minValue || 1;
+        const maxScale = configuration?.maxValue || 10;
         return (
-          <Box>
+          <Box sx={{ px: 2 }}>
             <Typography gutterBottom>
-              {configuration?.labels?.min || 'Min'}: {min} - {configuration?.labels?.max || 'Max'}: {max}
+              {configuration?.labels?.min} ({minScale}) - {configuration?.labels?.max} ({maxScale})
             </Typography>
             <Slider
-              value={response ? parseInt(response) : min}
-              onChange={(_, value) => setResponse(value.toString())}
-              min={min}
-              max={max}
-              step={configuration?.step || 1}
-              marks
+              min={minScale}
+              max={maxScale}
+              step={configuration?.step}
+              value={response === "" ? minScale : parseInt(response)}
+              onChange={(_, v) => setResponse(v.toString())}
               valueLabelDisplay="auto"
             />
-            <Typography variant="body2" color="text.secondary" align="center">
-              Selected: {response || min}
-            </Typography>
           </Box>
         );
 
       case QuestionType.OpenEnded:
-      case QuestionType.WordCloud:
         return (
           <TextField
             fullWidth
             multiline
-            rows={4}
+            minRows={3}
             value={response}
-            onChange={(e) => setResponse(e.target.value)}
-            placeholder="Enter your response..."
-            variant="outlined"
+            onChange={e => setResponse(e.target.value)}
+            placeholder="Type your answer..."
+          />
+        );
+
+      case QuestionType.WordCloud:
+        return (
+          <TextField
+            fullWidth
+            value={response}
+            onChange={e => setResponse(e.target.value)}
+            placeholder="Enter words separated by commas"
           />
         );
 
@@ -358,9 +352,8 @@ const AudienceView: React.FC = () => {
           <TextField
             fullWidth
             value={response}
-            onChange={(e) => setResponse(e.target.value)}
+            onChange={e => setResponse(e.target.value)}
             placeholder="Enter your response..."
-            variant="outlined"
           />
         );
     }
@@ -412,32 +405,40 @@ const AudienceView: React.FC = () => {
 
     if (state === 'response_submitted') {
       return (
-        <Alert severity="success" sx={{ mt: 2 }}>
-          <Typography variant="h6">Response Submitted!</Typography>
-          <Typography>Thank you for your response.</Typography>
-        </Alert>
+        <StyledPaper>
+          <Typography variant="h5" gutterBottom>
+            Thank you for your responses!
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Your answers have been saved.
+          </Typography>
+        </StyledPaper>
       );
     }
 
     if (state === 'question_active' && activeQuestion) {
       return (
-        <QuestionCard>
-          <Typography variant="h5" gutterBottom>
+        <StyledPaper>
+          {/* Question text */}
+          <Typography variant="body1" gutterBottom>
             {activeQuestion.text}
           </Typography>
-          {renderQuestionForm()}
-          <Box mt={2}>
+          {/* Render input for current question */}
+          <Box sx={{ my: 2 }}>
+            {renderQuestionForm()}
+          </Box>
+          {/* Submit button */}
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
             <Button
               variant="contained"
               onClick={handleSubmitResponse}
               disabled={!response.trim() || hasResponded}
-              fullWidth
               size="large"
             >
               {hasResponded ? 'Response Submitted' : 'Submit Response'}
             </Button>
           </Box>
-        </QuestionCard>
+        </StyledPaper>
       );
     }
 
@@ -464,7 +465,7 @@ const AudienceView: React.FC = () => {
         </Toolbar>
       </AppBar>
 
-      <Container maxWidth="md" sx={{ mt: 4 }}>
+      <Container maxWidth="sm" sx={{ mt: 4 }}>
         {presentation && (
           <StyledPaper>
             <Typography variant="h4" gutterBottom>
