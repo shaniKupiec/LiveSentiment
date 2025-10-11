@@ -348,7 +348,6 @@ namespace LiveSentiment.Controllers
                         results.ChoiceCounts = GetChoiceCounts(question.Responses, question.Configuration);
                         break;
                     case QuestionType.NumericRating:
-                    case QuestionType.SliderScale:
                         results.NumericStats = GetNumericStats(question.Responses);
                         break;
                     case QuestionType.YesNo:
