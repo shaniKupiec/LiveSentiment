@@ -131,6 +131,21 @@ Submit response to active question
 }
 ```
 
+#### **GET** `/api/audience/presentation/{id}/active-question`
+Get active question for a presentation (for audience when they first connect)
+```json
+{
+  "id": "guid",
+  "text": "string",
+  "type": number,
+  "configuration": object,
+  "liveStartedAt": "datetime",
+  "enableSentimentAnalysis": boolean,
+  "enableEmotionAnalysis": boolean,
+  "enableKeywordExtraction": boolean
+}
+```
+
 #### **GET** `/api/audience/question/{id}/stats`
 Get response statistics (public view)
 ```json
@@ -483,6 +498,69 @@ docker-compose up --build
 - React hooks for efficient re-renders
 - Event handler cleanup
 - Connection status monitoring
+
+## 🆕 **Recent Improvements (v1.1.0)**
+
+### **Enhanced Audience Experience**
+
+#### **1. Improved Session End Handling**
+- **Issue**: When live session ended, audience view only showed "Disconnected" status
+- **Solution**: Added distinct UI states for different session end scenarios:
+  - `presentation_ended`: When presenter ends the entire live session
+  - `question_ended`: When a specific question is deactivated
+  - Clear messaging to inform audience about the current state
+
+#### **2. Active Question Detection on Connection**
+- **Issue**: If audience joined after a question was already live, they would only see "Waiting for Questions"
+- **Solution**: Added automatic check for active questions when audience first connects:
+  - New API endpoint: `GET /api/audience/presentation/{id}/active-question`
+  - Automatic detection and display of currently active questions
+  - Seamless experience for late-joining audience members
+
+#### **3. Better Question Deactivation Feedback**
+- **Issue**: When presenter clicked "close live" on a question, audience had no indication
+- **Solution**: Enhanced SignalR event handling:
+  - `QuestionDeactivated` event now properly updates audience UI
+  - Clear messaging when questions are manually ended
+  - Distinction between question ending and session ending
+
+### **Technical Implementation**
+
+#### **New API Endpoint**
+```typescript
+// Frontend API service
+async getActiveQuestionForPresentation(presentationId: string): Promise<any> {
+  return this.makeRequest<any>(`/api/audience/presentation/${presentationId}/active-question`, {
+    method: 'GET',
+  });
+}
+```
+
+#### **Enhanced Audience States**
+```typescript
+type AudienceState = 
+  | 'loading'
+  | 'connecting'
+  | 'connected'
+  | 'waiting'
+  | 'question_active'
+  | 'response_submitted'
+  | 'session_ended'
+  | 'presentation_ended'    // NEW: When entire session ends
+  | 'question_ended'        // NEW: When specific question ends
+  | 'error';
+```
+
+#### **Improved UI Messages**
+- **Presentation Ended**: "Presentation No Longer Live - The presenter has ended the live session. Thank you for participating!"
+- **Question Ended**: "Question Ended - The current question is no longer active. Please wait for the next question."
+
+### **Testing Scenarios Enhanced**
+
+#### **New Test Cases**
+1. **Late Joiner Test**: Start live session → Activate question → Open audience view in new tab → Verify question appears immediately
+2. **Question Deactivation Test**: Activate question → Audience responds → Click "close live" → Verify audience sees "Question Ended" message
+3. **Session End Test**: End entire live session → Verify audience sees "Presentation No Longer Live" message
 
 ## 🔮 **Future Enhancements**
 

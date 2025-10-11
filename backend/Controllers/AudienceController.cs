@@ -189,6 +189,58 @@ namespace LiveSentiment.Controllers
         }
 
         /// <summary>
+        /// Get active question for a presentation (for audience when they first connect)
+        /// </summary>
+        /// <param name="id">Presentation ID</param>
+        /// <returns>Active question details if any</returns>
+        [HttpGet("presentation/{id}/active-question")]
+        public async Task<ActionResult<AudienceQuestionResponse>> GetActiveQuestionForPresentation(string id)
+        {
+            try
+            {
+                if (!Guid.TryParse(id, out var presentationId))
+                {
+                    return BadRequest("Invalid presentation ID format");
+                }
+
+                var presentation = await _context.Presentations
+                    .Include(p => p.Questions)
+                    .FirstOrDefaultAsync(p => p.Id == presentationId && p.IsLive);
+
+                if (presentation == null)
+                {
+                    return NotFound("Presentation not found or not live");
+                }
+
+                var activeQuestion = presentation.Questions.FirstOrDefault(q => q.IsLive);
+
+                if (activeQuestion == null)
+                {
+                    return NotFound("No active question found");
+                }
+
+                var response = new AudienceQuestionResponse
+                {
+                    Id = activeQuestion.Id,
+                    Text = activeQuestion.Text,
+                    Type = activeQuestion.Type,
+                    Configuration = activeQuestion.Configuration,
+                    LiveStartedAt = activeQuestion.LiveStartedAt,
+                    EnableSentimentAnalysis = activeQuestion.EnableSentimentAnalysis,
+                    EnableEmotionAnalysis = activeQuestion.EnableEmotionAnalysis,
+                    EnableKeywordExtraction = activeQuestion.EnableKeywordExtraction
+                };
+
+                return this.Success(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting active question for presentation {id}");
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
+        /// <summary>
         /// Get response statistics for an active question (public view)
         /// </summary>
         /// <param name="id">Question ID</param>

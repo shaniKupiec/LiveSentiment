@@ -70,6 +70,8 @@ type AudienceState =
   | 'question_active'
   | 'response_submitted'
   | 'session_ended'
+  | 'presentation_ended'
+  | 'question_ended'
   | 'error';
 
 const AudienceView: React.FC = () => {
@@ -113,7 +115,7 @@ const AudienceView: React.FC = () => {
         setPresentation(presentationData);
         
         if (!presentationData.isLive) {
-          setState('waiting');
+          setState('presentation_ended');
           setError('This presentation is not currently live');
           return;
         }
@@ -170,11 +172,11 @@ const AudienceView: React.FC = () => {
 
     onQuestionDeactivated(() => {
       setActiveQuestion(null);
-      setState('connected');
+      setState('question_ended');
     });
 
     onLiveSessionEnded(() => {
-      setState('session_ended');
+      setState('presentation_ended');
       setActiveQuestion(null);
     });
 
@@ -194,10 +196,24 @@ const AudienceView: React.FC = () => {
     const checkActiveQuestion = async () => {
       if (isConnected && presentationId && state === 'connected') {
         try {
-          // This would be called if we missed the SignalR event
-          // For now, we'll just wait for the next question
+          // Check if there's an active question when first connecting
+          const activeQuestionData = await apiService.getActiveQuestionForPresentation(presentationId);
+          if (activeQuestionData) {
+            setActiveQuestion({
+              id: activeQuestionData.id,
+              text: activeQuestionData.text,
+              type: activeQuestionData.type,
+              configuration: activeQuestionData.configuration,
+              liveStartedAt: activeQuestionData.liveStartedAt,
+              enableSentimentAnalysis: activeQuestionData.enableSentimentAnalysis || false,
+              enableEmotionAnalysis: activeQuestionData.enableEmotionAnalysis || false,
+              enableKeywordExtraction: activeQuestionData.enableKeywordExtraction || false
+            });
+            setState('question_active');
+          }
         } catch (err) {
           console.error('Failed to check active question:', err);
+          // If no active question found, stay in connected state
         }
       }
     };
@@ -376,6 +392,24 @@ const AudienceView: React.FC = () => {
       );
     }
 
+    if (state === 'presentation_ended') {
+      return (
+        <Alert severity="warning" sx={{ mt: 2 }}>
+          <Typography variant="h6">Presentation No Longer Live</Typography>
+          <Typography>The presenter has ended the live session. Thank you for participating!</Typography>
+        </Alert>
+      );
+    }
+
+    if (state === 'question_ended') {
+      return (
+        <Alert severity="info" sx={{ mt: 2 }}>
+          <Typography variant="h6">Question Ended</Typography>
+          <Typography>The current question is no longer active. Please wait for the next question.</Typography>
+        </Alert>
+      );
+    }
+
     if (state === 'response_submitted') {
       return (
         <Alert severity="success" sx={{ mt: 2 }}>
@@ -439,13 +473,6 @@ const AudienceView: React.FC = () => {
             <Typography variant="h6" color="text.secondary" gutterBottom>
               Presented by: {presentation.presenterName}
             </Typography>
-            {presentation.labelName && (
-              <Chip 
-                label={presentation.labelName} 
-                style={{ backgroundColor: presentation.labelColor }}
-                sx={{ mb: 2 }}
-              />
-            )}
           </StyledPaper>
         )}
 
