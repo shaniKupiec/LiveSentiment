@@ -21,6 +21,9 @@ export interface Question {
   enableKeywordExtraction: boolean;
   order: number;
   isActive: boolean;
+  isLive: boolean;
+  liveStartedAt?: string;
+  liveEndedAt?: string;
   createdDate: string;
   lastUpdated: string;
   responseCount: number;
@@ -46,6 +49,9 @@ export interface QuestionSummary {
   type: QuestionType;
   order: number;
   isActive: boolean;
+  isLive: boolean;
+  liveStartedAt?: string;
+  liveEndedAt?: string;
   enableSentimentAnalysis: boolean;
   responseCount: number;
 }
