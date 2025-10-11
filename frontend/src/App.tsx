@@ -6,6 +6,7 @@ import PresenterDashboard from "./pages/PresenterDashboard";
 import AudienceView from "./pages/AudienceView";
 import { CircularProgress, Box } from "@mui/material";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { PresentationProvider } from "./contexts/PresentationContext";
 import { ErrorProvider } from "./components/ErrorHandler";
 import ErrorBoundary from "./components/ErrorBoundary";
 
@@ -65,7 +66,9 @@ const AppRoutes: React.FC = () => {
           path="/presenter"
           element={
             isAuthenticated && userRole === "presenter" ? (
-              <PresenterDashboard user={user} onLogout={logout} />
+              <PresentationProvider>
+                <PresenterDashboard user={user} onLogout={logout} />
+              </PresentationProvider>
             ) : (
               <Navigate to="/login" />
             )

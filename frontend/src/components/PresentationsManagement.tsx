@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Box,
   Button,
@@ -20,35 +20,62 @@ import {
   Alert,
   CircularProgress,
   Stack,
-  Tabs,
-  Tab,
+  keyframes,
 } from '@mui/material';
 import {
   Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Search as SearchIcon,
-  QuestionAnswer as QuestionIcon,
-  PlayArrow as StartIcon
+  Search as SearchIcon
 } from '@mui/icons-material';
-import { apiService } from '../services/api';
+import { usePresentations } from '../contexts/PresentationContext';
+import { usePresentationOperations } from '../hooks/usePresentationOperations';
 import type { Presentation, PresentationFilters, SortField, PresentationFormData } from '../types/presentation';
-import type { Label } from '../types/label';
-import type { Question } from '../types/question';
 import { formatDate } from '../utils/dateUtils';
 import PresentationForm from './PresentationForm';
 import DeleteConfirmationDialog from './DeleteConfirmationDialog';
-import QuestionsManagement from './QuestionsManagement';
 import StartPresentationDialog from './StartPresentationDialog';
+import PresentationDetailView from './PresentationDetailView';
 
-const PresentationsManagement: React.FC = () => {
-  const [presentations, setPresentations] = useState<Presentation[]>([]);
+// Pulse animation for live status
+const pulse = keyframes`
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
+`;
+
+interface PresentationsManagementProps {
+  onPresentationSelect?: (presentationId: string) => void;
+  selectedPresentationId?: string | null;
+}
+
+const PresentationsManagement: React.FC<PresentationsManagementProps> = ({ 
+  onPresentationSelect,
+  selectedPresentationId
+}) => {
+  // Use the new context and hooks
+  const {
+    presentations,
+    labels,
+    selectedPresentation,
+    presentationsLoading,
+    labelsLoading,
+    error,
+    fetchPresentations,
+    fetchLabels,
+    selectPresentation,
+    presentationsWithQuestions,
+    totalQuestions
+  } = usePresentations();
+  
+  const { createPresentation, updatePresentation, deletePresentation } = usePresentationOperations();
+  
+  // Local state for UI
   const [filteredPresentations, setFilteredPresentations] = useState<Presentation[]>([]);
-  const [labels, setLabels] = useState<Label[]>([]);
-  const [allLabels, setAllLabels] = useState<Label[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [labelsLoading, setLabelsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const isInitialized = useRef(false);
   
   // Form states
@@ -66,12 +93,7 @@ const PresentationsManagement: React.FC = () => {
   const [startingPresentation, setStartingPresentation] = useState<Presentation | null>(null);
   
   // Questions management states
-  const [selectedPresentation, setSelectedPresentation] = useState<Presentation | null>(null);
-  const [activeSubTab, setActiveSubTab] = useState(0); // 0 = details, 1 = questions
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [questionsLoading, setQuestionsLoading] = useState(false);
-  const [questionCounts, setQuestionCounts] = useState<Record<string, number>>({});
-  const [questionCountsLoading, setQuestionCountsLoading] = useState(false);
+  const [showDetailView, setShowDetailView] = useState(false);
   
   // Filter and sort states
   const [filters, setFilters] = useState<PresentationFilters>({
@@ -89,131 +111,36 @@ const PresentationsManagement: React.FC = () => {
       fetchPresentations();
       fetchLabels();
     }
-  }, []);
+  }, [fetchPresentations, fetchLabels]);
 
   // Apply filters and sorting when filters change
   useEffect(() => {
     applyFiltersAndSorting();
   }, [presentations, filters]);
 
-  // Memoized computed values
-  const totalQuestions = useMemo(() => 
-    Object.values(questionCounts).reduce((sum, count) => sum + count, 0), 
-    [questionCounts]
-  );
+  // Computed values are now provided by the context
 
-  const presentationsWithQuestions = useMemo(() => 
-    Object.values(questionCounts).filter(count => count > 0).length, 
-    [questionCounts]
-  );
+  // Fetch functions are now handled by the context
 
-  const fetchPresentations = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await apiService.getPresentations();
-      setPresentations(data);
-      // Fetch question counts after presentations are loaded
-      await fetchQuestionCounts(data);
-    } catch (error) {
-      console.error('Error fetching presentations:', error);
-      setError('Failed to load presentations. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const fetchLabels = async () => {
-    try {
-      setLabelsLoading(true);
-      // Get ALL labels (active + inactive) for display purposes
-      const allLabelsData = await apiService.getAllLabels();
-      setAllLabels(allLabelsData);
-      
-      // Get only active labels for filtering and creation
-      const activeLabels = allLabelsData.filter(l => l.isActive);
-      setLabels(activeLabels);
-    } catch (error) {
-      console.error('Error fetching labels:', error);
-      // Don't show error to user, just log it
-    } finally {
-      setLabelsLoading(false);
-    }
-  };
-
-  const fetchQuestions = async (presentationId: string) => {
-    try {
-      setQuestionsLoading(true);
-      setError(null);
-      const data = await apiService.getQuestions(presentationId);
-      setQuestions(data);
-    } catch (error) {
-      console.error('Error fetching questions:', error);
-      setError('Failed to load questions. Please try again.');
-      setQuestions([]);
-    } finally {
-      setQuestionsLoading(false);
-    }
-  };
-
-  const fetchQuestionCounts = async (presentationsData: Presentation[] = presentations) => {
-    try {
-      setQuestionCountsLoading(true);
-      const counts: Record<string, number> = {};
-      
-      // Use Promise.allSettled to handle individual failures gracefully
-      const countPromises = presentationsData.map(async (presentation) => {
-        try {
-          const questions = await apiService.getQuestions(presentation.id);
-          return { id: presentation.id, count: questions.length };
-        } catch (error) {
-          console.error(`Error fetching questions for presentation ${presentation.id}:`, error);
-          return { id: presentation.id, count: 0 };
-        }
-      });
-
-      const results = await Promise.allSettled(countPromises);
-      results.forEach((result) => {
-        if (result.status === 'fulfilled') {
-          counts[result.value.id] = result.value.count;
-        }
-      });
-
-      setQuestionCounts(counts);
-    } catch (error) {
-      console.error('Error fetching question counts:', error);
-      // Don't show error to user, just log it
-    } finally {
-      setQuestionCountsLoading(false);
-    }
-  };
+  // Question counts are now included in the presentations data from the API
 
   const handleManageQuestions = useCallback((presentation: Presentation) => {
-    setSelectedPresentation(presentation);
-    setActiveSubTab(1); // Switch to questions tab
-    fetchQuestions(presentation.id);
-  }, []);
+    // Use the context to select the presentation
+    selectPresentation(presentation);
+    setShowDetailView(true);
+  }, [selectPresentation]);
 
   const handleBackToPresentations = useCallback(() => {
-    setSelectedPresentation(null);
-    setActiveSubTab(0);
-    setQuestions([]);
-  }, []);
-
-  const handleQuestionsChange = useCallback((newQuestions: Question[]) => {
-    setQuestions(newQuestions);
-    
-    // Update question count for the current presentation
-    if (selectedPresentation) {
-      setQuestionCounts(prev => ({
-        ...prev,
-        [selectedPresentation.id]: newQuestions.length
-      }));
+    setShowDetailView(false);
+    selectPresentation(null);
+    // Refresh presentations list to show updated live status
+    fetchPresentations(true); // Force refresh
+    if (onPresentationSelect) {
+      onPresentationSelect('');
     }
-    
-    // In a real app, you would sync with the backend here
-    console.log('Questions updated:', newQuestions);
-  }, [selectedPresentation]);
+  }, [onPresentationSelect, selectPresentation, fetchPresentations]);
+
 
   const applyFiltersAndSorting = useCallback(() => {
     let filtered = [...presentations];
@@ -249,9 +176,7 @@ const PresentationsManagement: React.FC = () => {
   const handleCreatePresentation = async (data: PresentationFormData) => {
     try {
       setFormLoading(true);
-      setError(null);
-      await apiService.createPresentation(data);
-      await fetchPresentations();
+      await createPresentation(data);
       setFormOpen(false);
     } catch (error) {
       console.error('Error creating presentation:', error);
@@ -266,9 +191,7 @@ const PresentationsManagement: React.FC = () => {
     
     try {
       setFormLoading(true);
-      setError(null);
-      await apiService.updatePresentation(editingPresentation.id, data);
-      await fetchPresentations();
+      await updatePresentation(editingPresentation.id, data);
       setEditingPresentation(null);
     } catch (error) {
       console.error('Error updating presentation:', error);
@@ -283,9 +206,7 @@ const PresentationsManagement: React.FC = () => {
     
     try {
       setDeleteLoading(true);
-      setError(null);
-      await apiService.deletePresentation(deletingPresentation.id);
-      await fetchPresentations();
+      await deletePresentation(deletingPresentation.id);
       setDeletingPresentation(null);
     } catch (error) {
       console.error('Error deleting presentation:', error);
@@ -295,20 +216,6 @@ const PresentationsManagement: React.FC = () => {
     }
   };
 
-  const openEditForm = useCallback((presentation: Presentation) => {
-    setEditingPresentation(presentation);
-    setFormOpen(true);
-  }, []);
-
-  const openDeleteDialog = useCallback((presentation: Presentation) => {
-    setDeletingPresentation(presentation);
-    setDeleteDialogOpen(true);
-  }, []);
-
-  const openStartDialog = useCallback((presentation: Presentation) => {
-    setStartingPresentation(presentation);
-    setStartDialogOpen(true);
-  }, []);
 
   const closeForm = useCallback(() => {
     setFormOpen(false);
@@ -340,39 +247,39 @@ const PresentationsManagement: React.FC = () => {
   const getLabelDisplayName = useCallback((labelId?: string) => {
     if (!labelId) return 'No Label';
     
-    // Find label in ALL labels (including inactive)
-    const label = allLabels.find(l => l.id === labelId);
+    // Find label in labels
+    const label = labels.find(l => l.id === labelId);
     
     if (label) {
       return label.isActive ? label.name : `${label.name} (Inactive)`;
     }
     
     return 'Unknown Label';
-  }, [allLabels]);
+  }, [labels]);
 
   const getLabelColor = useCallback((labelId?: string) => {
     if (!labelId) return '#ccc';
     
-    // Find label in ALL labels (including inactive)
-    const label = allLabels.find(l => l.id === labelId);
+    // Find label in labels
+    const label = labels.find(l => l.id === labelId);
     
     if (label) {
       return label.color;
     }
     
     return '#ccc';
-  }, [allLabels]);
+  }, [labels]);
 
   const isLabelActive = useCallback((labelId?: string) => {
     if (!labelId) return false;
     
-    // Find label in ALL labels (including inactive)
-    const label = allLabels.find(l => l.id === labelId);
+    // Find label in labels
+    const label = labels.find(l => l.id === labelId);
     
     return label?.isActive ?? false;
-  }, [allLabels]);
+  }, [labels]);
 
-  if (loading) {
+  if (presentationsLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 200 }}>
         <CircularProgress />
@@ -382,18 +289,20 @@ const PresentationsManagement: React.FC = () => {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1">
-          Presentations
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setFormOpen(true)}
-        >
-          New Presentation
-        </Button>
-      </Box>
+      {!selectedPresentation && (
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h4" component="h1">
+            Presentations
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setFormOpen(true)}
+          >
+            New Presentation
+          </Button>
+        </Box>
+      )}
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
@@ -401,38 +310,34 @@ const PresentationsManagement: React.FC = () => {
         </Alert>
       )}
 
-      {/* Summary Statistics */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Box>
-          <Typography variant="h6" gutterBottom>Overview</Typography>
-          <Box sx={{ display: 'flex', gap: 3 }}>
+      {!selectedPresentation && (
+        <>
+          {/* Summary Statistics */}
+          <Paper sx={{ p: 2, mb: 3 }}>
             <Box>
-              <Typography variant="body2" color="text.secondary">Total Presentations</Typography>
-              <Typography variant="h4" color="primary">{presentations.length}</Typography>
+              <Typography variant="h6" gutterBottom>Overview</Typography>
+              <Box sx={{ display: 'flex', gap: 3 }}>
+                <Box>
+                  <Typography variant="body2" color="text.secondary">Total Presentations</Typography>
+                  <Typography variant="h4" color="primary">{presentations.length}</Typography>
+                </Box>
+                <Box>
+                  <Typography variant="body2" color="text.secondary">Total Questions</Typography>
+                  <Typography variant="h4" color="secondary">
+                    {totalQuestions}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="body2" color="text.secondary">Presentations with Questions</Typography>
+                  <Typography variant="h4" color="success.main">
+                    {presentationsWithQuestions}
+                  </Typography>
+                </Box>
+              </Box>
             </Box>
-            <Box>
-              <Typography variant="body2" color="text.secondary">Total Questions</Typography>
-              <Typography variant="h4" color="secondary">
-                {questionCountsLoading ? (
-                  <CircularProgress size={24} />
-                ) : (
-                  totalQuestions
-                )}
-              </Typography>
-            </Box>
-            <Box>
-              <Typography variant="body2" color="text.secondary">Presentations with Questions</Typography>
-              <Typography variant="h4" color="success.main">
-                {questionCountsLoading ? (
-                  <CircularProgress size={24} />
-                ) : (
-                  presentationsWithQuestions
-                )}
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
-      </Paper>
+          </Paper>
+        </>
+      )}
 
       {/* Filters and Search - Only show when viewing presentations list */}
       {!selectedPresentation && (
@@ -478,7 +383,7 @@ const PresentationsManagement: React.FC = () => {
                   )),
                   
                   // Inactive Labels (disabled, for reference)
-                  ...allLabels.filter(l => !l.isActive).map((label) => (
+                  ...labels.filter(l => !l.isActive).map((label) => (
                     <MenuItem key={label.id} value={label.id} disabled>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Box
@@ -505,17 +410,17 @@ const PresentationsManagement: React.FC = () => {
       )}
 
       {/* Main Content - Either Presentations List or Questions Management */}
-      {!selectedPresentation ? (
+      {!showDetailView ? (
         // Presentations List View
         <Paper>
           <TableContainer>
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Title & Actions</TableCell>
+                  <TableCell>Title</TableCell>
                   <TableCell>
                     Label
-                    {allLabels.some(l => !l.isActive) && (
+                    {labels.some(l => !l.isActive) && (
                       <Chip
                         label="Some inactive labels"
                         size="small"
@@ -524,6 +429,7 @@ const PresentationsManagement: React.FC = () => {
                       />
                     )}
                   </TableCell>
+                  <TableCell align="center">Status</TableCell>
                   <TableCell>
                     <TableSortLabel
                       active={filters.sortBy === 'createdDate'}
@@ -548,14 +454,14 @@ const PresentationsManagement: React.FC = () => {
               <TableBody>
                 {filteredPresentations.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
+                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
                       <Typography variant="body1" color="text.secondary">
                         {filters.search || filters.labelId 
                           ? 'No presentations match your filters.'
                           : 'No presentations found. Create your first one!'
                         }
                       </Typography>
-                      {allLabels.some(l => !l.isActive) && (
+                      {labels.some(l => !l.isActive) && (
                         <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
                           Note: Some presentations may have inactive labels that are no longer available for new assignments.
                         </Typography>
@@ -564,81 +470,24 @@ const PresentationsManagement: React.FC = () => {
                   </TableRow>
                 ) : (
                   filteredPresentations.map((presentation) => (
-                    <TableRow key={presentation.id} hover>
+                    <TableRow 
+                      key={presentation.id} 
+                      hover
+                      selected={selectedPresentationId === presentation.id}
+                      sx={{ 
+                        cursor: 'pointer',
+                        '&:hover': {
+                          backgroundColor: selectedPresentationId === presentation.id 
+                            ? 'action.selected' 
+                            : 'action.hover'
+                        }
+                      }}
+                      onClick={() => handleManageQuestions(presentation)}
+                    >
                       <TableCell>
-                        <Box>
-                          <Typography variant="body1" fontWeight="medium" gutterBottom>
-                            {presentation.title}
-                          </Typography>
-                          {/* Quick Actions Row */}
-                          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                            <Button
-                              variant="contained"
-                              size="small"
-                              startIcon={<StartIcon />}
-                              onClick={() => openStartDialog(presentation)}
-                              sx={{ 
-                                minWidth: 'auto',
-                                px: 2,
-                                py: 0.5,
-                                fontSize: '0.75rem',
-                                backgroundColor: '#4caf50',
-                                '&:hover': {
-                                  backgroundColor: '#388e3c'
-                                }
-                              }}
-                            >
-                              Start
-                            </Button>
-                            <Button
-                              variant="contained"
-                              size="small"
-                              startIcon={<QuestionIcon />}
-                              onClick={() => handleManageQuestions(presentation)}
-                              sx={{ 
-                                minWidth: 'auto',
-                                px: 2,
-                                py: 0.5,
-                                fontSize: '0.75rem',
-                                backgroundColor: '#9c27b0',
-                                '&:hover': {
-                                  backgroundColor: '#7b1fa2'
-                                }
-                              }}
-                            >
-                              Questions
-                            </Button>
-                            <Button
-                              variant="outlined"
-                              size="small"
-                              startIcon={<EditIcon />}
-                              onClick={() => openEditForm(presentation)}
-                              sx={{ 
-                                minWidth: 'auto',
-                                px: 2,
-                                py: 0.5,
-                                fontSize: '0.75rem'
-                              }}
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              variant="outlined"
-                              size="small"
-                              startIcon={<DeleteIcon />}
-                              onClick={() => openDeleteDialog(presentation)}
-                              color="error"
-                              sx={{ 
-                                minWidth: 'auto',
-                                px: 2,
-                                py: 0.5,
-                                fontSize: '0.75rem'
-                              }}
-                            >
-                              Delete
-                            </Button>
-                          </Box>
-                        </Box>
+                        <Typography variant="body1" fontWeight="medium">
+                          {presentation.title}
+                        </Typography>
                       </TableCell>
                       <TableCell>
                         <Chip 
@@ -658,28 +507,35 @@ const PresentationsManagement: React.FC = () => {
                           }}
                         />
                       </TableCell>
+                      <TableCell align="center">
+                        {presentation.isLive ? (
+                          <Chip
+                            label="LIVE"
+                            size="small"
+                            sx={{
+                              backgroundColor: '#4CAF50',
+                              color: 'white',
+                              fontWeight: 'bold',
+                              animation: `${pulse} 2s infinite`
+                            }}
+                          />
+                        ) : (
+                          <Chip
+                            label="Draft"
+                            size="small"
+                            variant="outlined"
+                            sx={{
+                              color: 'text.secondary'
+                            }}
+                          />
+                        )}
+                      </TableCell>
                       <TableCell>{formatDate(presentation.createdDate)}</TableCell>
                       <TableCell>{formatDate(presentation.lastUpdated)}</TableCell>
                       <TableCell align="center">
-                        {/* Question count indicator */}
-                        <Box sx={{ textAlign: 'center' }}>
-                          <Typography variant="caption" color="text.secondary" display="block">
-                            Questions
-                          </Typography>
-                          <Chip
-                            label={questionCountsLoading ? '...' : (questionCounts[presentation.id] || 0)}
-                            size="small"
-                            variant="outlined"
-                            color={questionCounts[presentation.id] > 0 ? "primary" : "default"}
-                            sx={{ 
-                              cursor: 'pointer',
-                              '&:hover': {
-                                backgroundColor: '#f3e5f5'
-                              }
-                            }}
-                            onClick={() => handleManageQuestions(presentation)}
-                          />
-                        </Box>
+                        <Typography variant="body1" fontWeight="medium">
+                          {presentation.questions?.length || 0}
+                        </Typography>
                       </TableCell>
                     </TableRow>
                   ))
@@ -688,93 +544,15 @@ const PresentationsManagement: React.FC = () => {
             </Table>
           </TableContainer>
         </Paper>
-      ) : (
-        // Questions Management View
-        <Paper>
-          <Box sx={{ p: 3 }}>
-            {/* Header with back button */}
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-              <Button
-                variant="outlined"
-                onClick={handleBackToPresentations}
-                sx={{ mr: 2 }}
-              >
-                ← Back to Presentations
-              </Button>
-              <Typography variant="h5" component="h2">
-                Questions for: {selectedPresentation.title}
-              </Typography>
-            </Box>
-
-            {/* Sub-tabs */}
-            <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-              <Tabs value={activeSubTab} onChange={(_e, newValue) => setActiveSubTab(newValue)}>
-                <Tab label="Presentation Details" />
-                <Tab label="Questions" />
-              </Tabs>
-            </Box>
-
-            {/* Sub-tab content */}
-            {activeSubTab === 0 && (
-              <Box>
-                <Typography variant="h6" gutterBottom>Presentation Information</Typography>
-                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 3 }}>
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">Title</Typography>
-                    <Typography variant="body1">{selectedPresentation.title}</Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">Label</Typography>
-                    <Chip 
-                      label={getLabelDisplayName(selectedPresentation.labelId)} 
-                      size="small" 
-                      color="primary" 
-                      variant="outlined"
-                      sx={{
-                        backgroundColor: getLabelColor(selectedPresentation.labelId),
-                        color: '#000',
-                        borderColor: getLabelColor(selectedPresentation.labelId),
-                        opacity: isLabelActive(selectedPresentation.labelId) ? 1 : 0.6
-                      }}
-                    />
-                  </Box>
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">Created Date</Typography>
-                    <Typography variant="body1">{formatDate(selectedPresentation.createdDate)}</Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">Last Updated</Typography>
-                    <Typography variant="body1">{formatDate(selectedPresentation.lastUpdated)}</Typography>
-                  </Box>
-                </Box>
-                <Button
-                  variant="contained"
-                  onClick={() => openEditForm(selectedPresentation)}
-                  startIcon={<EditIcon />}
-                >
-                  Edit Presentation
-                </Button>
-              </Box>
-            )}
-
-            {activeSubTab === 1 && (
-              <Box>
-                {error && (
-                  <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-                    {error}
-                  </Alert>
-                )}
-                <QuestionsManagement
-                  presentation={selectedPresentation}
-                  questions={questions}
-                  onQuestionsChange={handleQuestionsChange}
-                  isLoading={questionsLoading}
-                />
-              </Box>
-            )}
-          </Box>
-        </Paper>
-      )}
+      ) : selectedPresentation ? (
+        // Presentation Detail View
+        <PresentationDetailView
+          presentation={selectedPresentation}
+          onPresentationUpdate={fetchPresentations}
+          onPresentationDelete={handleBackToPresentations}
+          onBack={handleBackToPresentations}
+        />
+      ) : null}
 
       {/* Presentation Form */}
       <PresentationForm
