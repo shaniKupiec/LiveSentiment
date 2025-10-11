@@ -56,7 +56,6 @@ const StatsCard = styled(Paper)(({ theme }) => ({
 interface LivePresentationManagerProps {
   presentationId: string;
   questions: Question[];
-  onRefreshQuestions: () => void;
 }
 
 interface LiveSessionStatus {
@@ -99,8 +98,7 @@ interface QuestionResults {
 
 const LivePresentationManager: React.FC<LivePresentationManagerProps> = ({
   presentationId,
-  questions,
-  onRefreshQuestions
+  questions
 }) => {
   const [liveStatus, setLiveStatus] = useState<LiveSessionStatus | null>(null);
   const [audienceCount, setAudienceCount] = useState<number>(0);
