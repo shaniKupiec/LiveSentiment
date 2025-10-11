@@ -30,7 +30,8 @@ namespace LiveSentiment.Services
             {
                 new Claim(ClaimTypes.NameIdentifier, presenter.Id.ToString()),
                 new Claim(ClaimTypes.Email, presenter.Email),
-                new Claim(ClaimTypes.Name, presenter.Name)
+                new Claim(ClaimTypes.Name, presenter.Name),
+                new Claim("PresenterId", presenter.Id.ToString()) // For SignalR authentication
             };
 
             var token = new JwtSecurityToken(
