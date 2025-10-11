@@ -487,7 +487,6 @@ const QuestionsManagement: React.FC<QuestionsManagementProps> = ({
         }}
         onSubmit={handleFormSubmit}
         question={editingQuestion}
-        presentationId={presentation.id}
         order={questions.length + 1}
         isLoading={operationLoading === 'form'}
       />
