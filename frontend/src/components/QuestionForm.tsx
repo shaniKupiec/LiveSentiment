@@ -34,7 +34,6 @@ interface QuestionFormProps {
   onSubmit: (data: QuestionFormData) => Promise<void>;
   question?: Question | null;
   isLoading?: boolean;
-  presentationId: string;
   order: number;
 }
 
