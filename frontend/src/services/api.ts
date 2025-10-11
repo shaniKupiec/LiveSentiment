@@ -311,6 +311,12 @@ class ApiService {
     });
   }
 
+  async getActiveQuestionForPresentation(presentationId: string): Promise<any> {
+    return this.makeRequest<any>(`/api/audience/presentation/${presentationId}/active-question`, {
+      method: 'GET',
+    });
+  }
+
   // Live presentation API methods (authentication required)
   async startLiveSession(presentationId: string): Promise<any> {
     return this.makeRequest<any>(`/api/presentations/${presentationId}/live/start`, {

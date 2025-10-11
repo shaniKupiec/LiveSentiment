@@ -129,7 +129,9 @@ const PresentationDetailView: React.FC<PresentationDetailViewProps> = ({
     connect,
     joinPresenterSession,
     startLiveSession: signalRStartLiveSession,
-    activateQuestion: signalRActivateQuestion
+    endLiveSession: signalREndLiveSession,
+    activateQuestion: signalRActivateQuestion,
+    deactivateQuestion: signalRDeactivateQuestion
   } = useSignalR({ autoConnect: false });
 
   // Presentation state is now managed by the context
@@ -213,6 +215,9 @@ const PresentationDetailView: React.FC<PresentationDetailViewProps> = ({
       if (isCurrentlyLive) {
         // Deactivate question via API
         await apiService.deactivateQuestion(presentation.id, questionId);
+        
+        // Deactivate question via SignalR
+        await signalRDeactivateQuestion(questionId);
         console.log('✅ Question deactivated successfully');
       } else {
         // Activate question via API
@@ -252,6 +257,9 @@ const PresentationDetailView: React.FC<PresentationDetailViewProps> = ({
       
       // Stop live session via API (with optimistic updates)
       await stopLiveSession(presentation.id);
+      
+      // Stop live session via SignalR
+      await signalREndLiveSession(presentation.id);
       
     } catch (error) {
       console.error('Failed to stop live session:', error);

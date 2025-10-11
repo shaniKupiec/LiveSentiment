@@ -82,7 +82,6 @@ const SortableQuestionItem: React.FC<{
   index: number;
   onEdit: (question: Question) => void;
   onDelete: (question: Question) => void;
-  onToggleActive: (question: Question) => void;
   operationLoading: string | null;
   getQuestionTypeIcon: (type: QuestionType) => React.ReactElement;
   getQuestionTypeLabel: (type: QuestionType) => string;
@@ -92,7 +91,6 @@ const SortableQuestionItem: React.FC<{
   index, 
   onEdit, 
   onDelete, 
-  onToggleActive, 
   operationLoading,
   getQuestionTypeIcon,
   getQuestionTypeLabel,
@@ -208,19 +206,6 @@ const SortableQuestionItem: React.FC<{
 
       <ListItemSecondaryAction>
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={question.isActive}
-                onChange={() => onToggleActive(question)}
-                disabled={operationLoading === question.id}
-                size="small"
-              />
-            }
-            label={question.isActive ? 'Active' : 'Inactive'}
-            labelPlacement="top"
-            sx={{ mr: 1 }}
-          />
           <Tooltip title="Edit question">
             <IconButton
               onClick={() => onEdit(question)}
@@ -506,7 +491,6 @@ const QuestionsManagement: React.FC<QuestionsManagementProps> = ({
                   index={index}
                   onEdit={handleEditQuestion}
                   onDelete={handleDeleteQuestion}
-                  onToggleActive={handleToggleQuestionActive}
                   operationLoading={operationLoading}
                   getQuestionTypeIcon={getQuestionTypeIcon}
                   getQuestionTypeLabel={getQuestionTypeLabel}
