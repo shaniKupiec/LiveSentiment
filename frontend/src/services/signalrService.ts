@@ -20,6 +20,7 @@ import {
   SignalRMethods,
   SignalREvents
 } from '../types/signalr';
+import { config } from '../config/environment';
 
 export class SignalRService {
   private connection: signalR.HubConnection | null = null;
@@ -31,13 +32,13 @@ export class SignalRService {
   };
   private statusCallbacks: ((status: ConnectionStatus) => void)[] = [];
 
-  constructor(config?: Partial<SignalRConfig>) {
+  constructor(signalRConfig?: Partial<SignalRConfig>) {
     this.config = {
-      baseUrl: config?.baseUrl || config?.baseUrl || 'http://localhost:5000',
-      hubPath: config?.hubPath || '/hubs/poll',
-      accessToken: config?.accessToken,
-      reconnectInterval: config?.reconnectInterval || 5000,
-      maxReconnectAttempts: config?.maxReconnectAttempts || 5
+      baseUrl: signalRConfig?.baseUrl || config.apiBaseUrl,
+      hubPath: signalRConfig?.hubPath || '/hubs/poll',
+      accessToken: signalRConfig?.accessToken,
+      reconnectInterval: signalRConfig?.reconnectInterval || 5000,
+      maxReconnectAttempts: signalRConfig?.maxReconnectAttempts || 5
     };
   }
 
