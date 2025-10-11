@@ -25,7 +25,7 @@ import {
   Chip,
 } from '@mui/material';
 import { ExpandMore, Add, Delete } from '@mui/icons-material';
-import type { Question, QuestionFormData, QuestionType, MultipleChoiceConfig, NumericRatingConfig, SliderScaleConfig } from '../types/question';
+import type { Question, QuestionFormData, QuestionType, MultipleChoiceConfig, NumericRatingConfig } from '../types/question';
 import { QuestionType as QuestionTypeValues } from '../types/question';
 
 interface QuestionFormProps {
@@ -93,11 +93,9 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
     switch (type) {
       case QuestionTypeValues.MultipleChoiceSingle:
       case QuestionTypeValues.MultipleChoiceMultiple:
-        return { options: ['Option 1', 'Option 2'], allowOther: false, otherText: 'Other' };
+        return { options: ['Option 1', 'Option 2'] };
       case QuestionTypeValues.NumericRating:
         return { minValue: 1, maxValue: 10, step: 1, labels: { min: 'Poor', max: 'Excellent' } };
-      case QuestionTypeValues.SliderScale:
-        return { minValue: 0, maxValue: 100, step: 5, labels: { min: 'Not at all', max: 'Very much' } };
       default:
         return {};
     }
@@ -127,8 +125,8 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
       }
     }
 
-    if (formData.type === QuestionTypeValues.NumericRating || formData.type === QuestionTypeValues.SliderScale) {
-      const config = formData.configuration as NumericRatingConfig | SliderScaleConfig;
+    if (formData.type === QuestionTypeValues.NumericRating) {
+      const config = formData.configuration as NumericRatingConfig;
       if (config.minValue >= config.maxValue) {
         newErrors.configuration = 'Minimum value must be less than maximum value';
       } else if (config.step && config.step <= 0) {
@@ -190,8 +188,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
         return renderMultipleChoiceConfig();
       case QuestionTypeValues.NumericRating:
         return renderNumericRatingConfig();
-      case QuestionTypeValues.SliderScale:
-        return renderSliderScaleConfig();
       default:
         return null;
     }
@@ -217,13 +213,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
       handleFieldChange('configuration', { ...config, options: newOptions });
     };
 
-    const toggleAllowOther = () => {
-      handleFieldChange('configuration', { ...config, allowOther: !config.allowOther });
-    };
-
-    const updateOtherText = (value: string) => {
-      handleFieldChange('configuration', { ...config, otherText: value });
-    };
 
     return (
       <Box>
@@ -265,29 +254,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
           Add Option
         </Button>
 
-        <FormControlLabel
-          control={
-            <Switch
-              checked={!!config.allowOther}
-              onChange={toggleAllowOther}
-            />
-          }
-          label="Allow 'Other' option"
-          sx={{ mt: 2, display: 'block' }}
-        />
-
-        {config.allowOther && (
-          <TextField
-            fullWidth
-            label="'Other' option text"
-            value={config.otherText || 'Other'}
-            onChange={(e) => updateOtherText(e.target.value)}
-            size="small"
-            sx={{ mt: 1 }}
-            error={!!(!config.otherText?.trim())}
-            helperText={!!(!config.otherText?.trim()) ? 'Other option text is required' : ''}
-          />
-        )}
       </Box>
     );
   };
@@ -363,76 +329,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
     );
   };
 
-  const renderSliderScaleConfig = () => {
-    const config = formData.configuration as SliderScaleConfig;
-    
-    return (
-      <Box>
-        <Typography variant="h6" gutterBottom>Slider Configuration</Typography>
-        
-        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-          <TextField
-            label="Minimum Value"
-            type="number"
-            value={config.minValue || 0}
-            onChange={(e) => handleFieldChange('configuration', { 
-              ...config, 
-              minValue: parseInt(e.target.value) || 0 
-            })}
-            size="small"
-            inputProps={{ min: -1000, max: 1000 }}
-          />
-          <TextField
-            label="Maximum Value"
-            type="number"
-            value={config.maxValue || 100}
-            onChange={(e) => handleFieldChange('configuration', { 
-              ...config, 
-              maxValue: parseInt(e.target.value) || 100 
-            })}
-            size="small"
-            inputProps={{ min: -1000, max: 1000 }}
-          />
-          <TextField
-            label="Step"
-            type="number"
-            value={config.step || 5}
-            onChange={(e) => handleFieldChange('configuration', { 
-              ...config, 
-              step: parseInt(e.target.value) || 5 
-            })}
-            size="small"
-            inputProps={{ min: 1, max: 1000 }}
-            error={config.step !== undefined && config.step <= 0}
-            helperText={config.step !== undefined && config.step <= 0 ? 'Step must be greater than 0' : ''}
-          />
-        </Box>
-
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <TextField
-            label="Min Label"
-            value={config.labels?.min || ''}
-            onChange={(e) => handleFieldChange('configuration', { 
-              ...config, 
-              labels: { ...config.labels, min: e.target.value } 
-            })}
-            size="small"
-            placeholder="e.g., Not at all"
-          />
-          <TextField
-            label="Max Label"
-            value={config.labels?.max || ''}
-            onChange={(e) => handleFieldChange('configuration', { 
-              ...config, 
-              labels: { ...config.labels, max: e.target.value } 
-            })}
-            size="small"
-            placeholder="e.g., Very much"
-          />
-        </Box>
-      </Box>
-    );
-  };
 
   const canEnableTextAnalysis = formData.type === QuestionTypeValues.OpenEnded || formData.type === QuestionTypeValues.WordCloud;
 
@@ -469,7 +365,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
               <MenuItem value={QuestionTypeValues.MultipleChoiceMultiple}>Multiple Choice (Multiple)</MenuItem>
               <MenuItem value={QuestionTypeValues.NumericRating}>Numeric Rating</MenuItem>
               <MenuItem value={QuestionTypeValues.YesNo}>Yes/No</MenuItem>
-              <MenuItem value={QuestionTypeValues.SliderScale}>Slider Scale</MenuItem>
               <MenuItem value={QuestionTypeValues.OpenEnded}>Open Ended</MenuItem>
               <MenuItem value={QuestionTypeValues.WordCloud}>Word Cloud</MenuItem>
             </Select>

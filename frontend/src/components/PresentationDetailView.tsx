@@ -70,8 +70,6 @@ const getQuestionTypeLabel = (type: number): string => {
       return 'Numeric Rating';
     case QuestionTypeEnum.YesNo:
       return 'Yes/No';
-    case QuestionTypeEnum.SliderScale:
-      return 'Slider Scale';
     case QuestionTypeEnum.OpenEnded:
       return 'Open-ended Text';
     case QuestionTypeEnum.WordCloud:

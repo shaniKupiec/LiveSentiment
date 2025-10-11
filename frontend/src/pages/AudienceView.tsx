@@ -306,24 +306,6 @@ const AudienceView: React.FC = () => {
           </RadioGroup>
         );
 
-      case QuestionType.SliderScale:
-        const minScale = configuration?.minValue || 1;
-        const maxScale = configuration?.maxValue || 10;
-        return (
-          <Box sx={{ px: 2 }}>
-            <Typography gutterBottom>
-              {configuration?.labels?.min} ({minScale}) - {configuration?.labels?.max} ({maxScale})
-            </Typography>
-            <Slider
-              min={minScale}
-              max={maxScale}
-              step={configuration?.step}
-              value={response === "" ? minScale : parseInt(response)}
-              onChange={(_, v) => setResponse(v.toString())}
-              valueLabelDisplay="auto"
-            />
-          </Box>
-        );
 
       case QuestionType.OpenEnded:
         return (

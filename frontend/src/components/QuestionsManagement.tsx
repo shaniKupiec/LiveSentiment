@@ -13,8 +13,6 @@ import {
   CircularProgress,
   Tooltip,
   Paper,
-  Switch,
-  FormControlLabel,
   keyframes
 } from '@mui/material';
 import {
@@ -263,8 +261,6 @@ const QuestionsManagement: React.FC<QuestionsManagementProps> = ({
         return <LinearScale color="primary" />;
       case QuestionTypeValues.YesNo:
         return <QuestionAnswer color="primary" />;
-      case QuestionTypeValues.SliderScale:
-        return <LinearScale color="primary" />;
       case QuestionTypeValues.OpenEnded:
         return <TextFields color="primary" />;
       case QuestionTypeValues.WordCloud:
@@ -284,8 +280,6 @@ const QuestionsManagement: React.FC<QuestionsManagementProps> = ({
         return 'Numeric Rating';
       case QuestionTypeValues.YesNo:
         return 'Yes/No';
-      case QuestionTypeValues.SliderScale:
-        return 'Slider Scale';
       case QuestionTypeValues.OpenEnded:
         return 'Open Ended';
       case QuestionTypeValues.WordCloud:
@@ -319,24 +313,6 @@ const QuestionsManagement: React.FC<QuestionsManagementProps> = ({
     setIsDeleteDialogOpen(true);
   };
 
-  const handleToggleQuestionActive = async (question: Question) => {
-    try {
-      setOperationLoading(question.id);
-      setError(null);
-      
-      await apiService.toggleQuestionActive(presentation.id, question.id, !question.isActive);
-      
-      const updatedQuestion = { ...question, isActive: !question.isActive };
-      const updatedQuestions = questions.map(q => 
-        q.id === question.id ? updatedQuestion : q
-      );
-      onQuestionsChange(updatedQuestions);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to toggle question status');
-    } finally {
-      setOperationLoading(null);
-    }
-  };
 
   const handleFormSubmit = async (data: QuestionFormData) => {
     try {

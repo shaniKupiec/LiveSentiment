@@ -3,9 +3,8 @@ export const QuestionType = {
   MultipleChoiceMultiple: 2,
   NumericRating: 3,
   YesNo: 4,
-  SliderScale: 5,
-  OpenEnded: 6,
-  WordCloud: 7
+  OpenEnded: 5,
+  WordCloud: 6
 } as const;
 
 export type QuestionType = typeof QuestionType[keyof typeof QuestionType];
@@ -63,8 +62,6 @@ export interface ReorderQuestionsRequest {
 // Question type-specific configuration interfaces
 export interface MultipleChoiceConfig {
   options: string[];
-  allowOther?: boolean;
-  otherText?: string;
 }
 
 export interface NumericRatingConfig {
@@ -77,15 +74,6 @@ export interface NumericRatingConfig {
   };
 }
 
-export interface SliderScaleConfig {
-  minValue: number;
-  maxValue: number;
-  step: number;
-  labels?: {
-    min: string;
-    max: string;
-  };
-}
 
 export interface QuestionFormData {
   text: string;

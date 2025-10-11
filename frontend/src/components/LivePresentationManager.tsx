@@ -499,7 +499,6 @@ const LivePresentationManager: React.FC<LivePresentationManagerProps> = ({
       case QuestionType.MultipleChoiceMultiple: return 'Multiple Choice (Multiple)';
       case QuestionType.NumericRating: return 'Numeric Rating';
       case QuestionType.YesNo: return 'Yes/No';
-      case QuestionType.SliderScale: return 'Slider Scale';
       case QuestionType.OpenEnded: return 'Open Ended';
       case QuestionType.WordCloud: return 'Word Cloud';
       default: return 'Unknown';
