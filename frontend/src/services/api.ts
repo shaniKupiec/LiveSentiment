@@ -279,6 +279,88 @@ class ApiService {
     });
   }
 
+  // Audience API methods (no authentication required)
+  async getAudiencePresentation(id: string): Promise<any> {
+    return this.makeRequest<any>(`/api/audience/presentation/${id}`, {
+      method: 'GET',
+    });
+  }
+
+  async getAudienceQuestion(id: string): Promise<any> {
+    return this.makeRequest<any>(`/api/audience/question/${id}`, {
+      method: 'GET',
+    });
+  }
+
+  async submitAudienceResponse(questionId: string, sessionId: string, value: string): Promise<any> {
+    return this.makeRequest<any>(`/api/audience/question/${questionId}/response`, {
+      method: 'POST',
+      body: JSON.stringify({ sessionId, value }),
+    });
+  }
+
+  async getQuestionStats(questionId: string): Promise<any> {
+    return this.makeRequest<any>(`/api/audience/question/${questionId}/stats`, {
+      method: 'GET',
+    });
+  }
+
+  async getResponseStatus(questionId: string, sessionId: string): Promise<any> {
+    return this.makeRequest<any>(`/api/audience/question/${questionId}/response-status/${sessionId}`, {
+      method: 'GET',
+    });
+  }
+
+  // Live presentation API methods (authentication required)
+  async startLiveSession(presentationId: string): Promise<any> {
+    return this.makeRequest<any>(`/api/presentations/${presentationId}/live/start`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+    });
+  }
+
+  async stopLiveSession(presentationId: string): Promise<any> {
+    return this.makeRequest<any>(`/api/presentations/${presentationId}/live/stop`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+    });
+  }
+
+  async activateQuestion(presentationId: string, questionId: string): Promise<any> {
+    return this.makeRequest<any>(`/api/presentations/${presentationId}/live/question/${questionId}/activate`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+    });
+  }
+
+  async deactivateQuestion(presentationId: string, questionId: string): Promise<any> {
+    return this.makeRequest<any>(`/api/presentations/${presentationId}/live/question/${questionId}/deactivate`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+    });
+  }
+
+  async getQuestionResults(presentationId: string, questionId: string): Promise<any> {
+    return this.makeRequest<any>(`/api/presentations/${presentationId}/live/question/${questionId}/results`, {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+    });
+  }
+
+  async getLiveSessionStatus(presentationId: string): Promise<any> {
+    return this.makeRequest<any>(`/api/presentations/${presentationId}/live/status`, {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+    });
+  }
+
+  async getAudienceCount(presentationId: string): Promise<any> {
+    return this.makeRequest<any>(`/api/presentations/${presentationId}/live/audience-count`, {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+    });
+  }
+
 
   // Helper method to get auth headers for authenticated requests
   getAuthHeaders(): Record<string, string> {

@@ -14,7 +14,8 @@ import {
   Tooltip,
   Paper,
   Switch,
-  FormControlLabel
+  FormControlLabel,
+  keyframes
 } from '@mui/material';
 import {
   Add,
@@ -54,6 +55,19 @@ import type { Question, QuestionFormData, QuestionType } from '../types/question
 import { QuestionType as QuestionTypeValues } from '../types/question';
 import type { Presentation } from '../types/presentation';
 import { apiService } from '../services/api';
+
+// Pulse animation for live status
+const pulse = keyframes`
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
+`;
 
 interface QuestionsManagementProps {
   presentation: Presentation;
@@ -169,6 +183,18 @@ const SortableQuestionItem: React.FC<{
                   label="Inactive" 
                   size="small" 
                   color="error"
+                />
+              )}
+              {question.isLive && (
+                <Chip 
+                  label="LIVE" 
+                  size="small" 
+                  sx={{
+                    backgroundColor: '#4CAF50',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    animation: `${pulse} 2s infinite`
+                  }}
                 />
               )}
             </Box>
