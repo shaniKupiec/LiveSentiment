@@ -50,7 +50,10 @@ namespace LiveSentiment.Controllers
                         Name = p.Label.Name,
                         Color = p.Label.Color,
                         IsActive = p.Label.IsActive
-                    } : null
+                    } : null,
+                    IsLive = p.IsLive,
+                    LiveStartedAt = p.LiveStartedAt,
+                    LiveEndedAt = p.LiveEndedAt
                 })
                 .ToListAsync();
 
@@ -90,7 +93,10 @@ namespace LiveSentiment.Controllers
                     Name = presentation.Label.Name,
                     Color = presentation.Label.Color,
                     IsActive = presentation.Label.IsActive
-                } : null
+                } : null,
+                IsLive = presentation.IsLive,
+                LiveStartedAt = presentation.LiveStartedAt,
+                LiveEndedAt = presentation.LiveEndedAt
             };
 
             return this.Success(response);
@@ -123,7 +129,10 @@ namespace LiveSentiment.Controllers
                         Name = p.Label.Name,
                         Color = p.Label.Color,
                         IsActive = p.Label.IsActive
-                    } : null
+                    } : null,
+                    IsLive = p.IsLive,
+                    LiveStartedAt = p.LiveStartedAt,
+                    LiveEndedAt = p.LiveEndedAt
                 })
                 .ToListAsync();
 
@@ -157,7 +166,10 @@ namespace LiveSentiment.Controllers
                         Name = p.Label.Name,
                         Color = p.Label.Color,
                         IsActive = p.Label.IsActive
-                    } : null
+                    } : null,
+                    IsLive = p.IsLive,
+                    LiveStartedAt = p.LiveStartedAt,
+                    LiveEndedAt = p.LiveEndedAt
                 })
                 .ToListAsync();
 
