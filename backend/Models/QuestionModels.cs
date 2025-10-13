@@ -32,19 +32,14 @@ namespace LiveSentiment.Models
         YesNo = 4,
         
         /// <summary>
-        /// Slider scale question
-        /// </summary>
-        SliderScale = 5,
-        
-        /// <summary>
         /// Open-ended text input (supports NLP analysis)
         /// </summary>
-        OpenEnded = 6,
+        OpenEnded = 5,
         
         /// <summary>
         /// Word cloud input (supports NLP analysis)
         /// </summary>
-        WordCloud = 7
+        WordCloud = 6
     }
 
     // Question entity that belongs to a Presentation
@@ -71,6 +66,9 @@ namespace LiveSentiment.Models
         
         public int Order { get; set; }
         public bool IsActive { get; set; } = true;
+        public bool IsLive { get; set; } = false;
+        public DateTime? LiveStartedAt { get; set; }
+        public DateTime? LiveEndedAt { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime LastUpdated { get; set; }
         
@@ -92,7 +90,7 @@ namespace LiveSentiment.Models
         public string Text { get; set; } = string.Empty;
         
         /// <summary>
-        /// The type of question (1=MultipleChoiceSingle, 2=MultipleChoiceMultiple, 3=NumericRating, 4=YesNo, 5=SliderScale, 6=OpenEnded, 7=WordCloud)
+        /// The type of question (1=MultipleChoiceSingle, 2=MultipleChoiceMultiple, 3=NumericRating, 4=YesNo, 5=OpenEnded, 6=WordCloud)
         /// </summary>
         [Required]
         public QuestionType Type { get; set; }
@@ -103,17 +101,17 @@ namespace LiveSentiment.Models
         public JsonDocument? Configuration { get; set; }
         
         /// <summary>
-        /// Enable sentiment analysis (positive/negative/neutral). Only available for OpenEnded (6) and WordCloud (7) questions.
+        /// Enable sentiment analysis (positive/negative/neutral). Only available for OpenEnded (5) and WordCloud (6) questions.
         /// </summary>
         public bool EnableSentimentAnalysis { get; set; } = false;
         
         /// <summary>
-        /// Enable emotion detection (joy, sadness, anger, etc.). Only available for OpenEnded (6) and WordCloud (7) questions.
+        /// Enable emotion detection (joy, sadness, anger, etc.). Only available for OpenEnded (5) and WordCloud (6) questions.
         /// </summary>
         public bool EnableEmotionAnalysis { get; set; } = false;
         
         /// <summary>
-        /// Enable keyword extraction. Only available for OpenEnded (6) and WordCloud (7) questions.
+        /// Enable keyword extraction. Only available for OpenEnded (5) and WordCloud (6) questions.
         /// </summary>
         public bool EnableKeywordExtraction { get; set; } = false;
         

@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Typography, Box, Button, AppBar, Toolbar, Container, Paper, Tabs, Tab } from "@mui/material";
 import { styled } from "@mui/material/styles";
+import { useParams } from "react-router-dom";
 import PresentationsManagement from "../components/PresentationsManagement";
 import LabelsManagement from "../components/LabelsManagement";
 
@@ -23,10 +24,27 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
 
 const PresenterDashboard: React.FC<PresenterDashboardProps> = ({ user, onLogout }) => {
   const [activeTab, setActiveTab] = useState(0);
+  const [selectedPresentationId, setSelectedPresentationId] = useState<string | null>(null);
+
+  const { presentationId } = useParams<{ presentationId?: string }>();
+
+
+  // Set presentation ID from URL params
+  useEffect(() => {
+    if (presentationId) {
+      setSelectedPresentationId(presentationId);
+      setActiveTab(0); // Switch to Presentations tab (now index 0)
+    }
+  }, [presentationId]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
   };
+
+  const handlePresentationSelect = (presentationId: string) => {
+    setSelectedPresentationId(presentationId);
+  };
+
 
   return (
     <Box>
@@ -34,9 +52,6 @@ const PresenterDashboard: React.FC<PresenterDashboardProps> = ({ user, onLogout 
         <Toolbar>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             LiveSentiment - Presenter Dashboard
-          </Typography>
-          <Typography variant="body2" sx={{ mr: 2 }}>
-            Welcome, {user?.name}
           </Typography>
           <Button color="inherit" onClick={onLogout}>
             Logout
@@ -49,37 +64,22 @@ const PresenterDashboard: React.FC<PresenterDashboardProps> = ({ user, onLogout 
           Welcome back, {user?.name}!
         </Typography>
         
-        <StyledPaper>
-          <Typography variant="h6" gutterBottom>
-            Quick Actions
-          </Typography>
-          <Typography variant="body1" color="text.secondary" paragraph>
-            This is where you'll manage your presentations, create polls, and view real-time sentiment analysis.
-          </Typography>
-        </StyledPaper>
 
         {/* Tabbed Interface */}
         <StyledPaper sx={{ mt: 3 }}>
           <Tabs value={activeTab} onChange={handleTabChange} sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Tab label="Presentations" />
             <Tab label="Labels" />
-            <Tab label="Polls" />
-            <Tab label="Analytics" />
           </Tabs>
           
           <Box sx={{ mt: 3 }}>
-            {activeTab === 0 && <PresentationsManagement />}
+            {activeTab === 0 && (
+              <PresentationsManagement 
+                onPresentationSelect={handlePresentationSelect}
+                selectedPresentationId={selectedPresentationId}
+              />
+            )}
             {activeTab === 1 && <LabelsManagement />}
-            {activeTab === 2 && (
-              <Typography variant="body1" color="text.secondary">
-                Polls management coming soon...
-              </Typography>
-            )}
-            {activeTab === 3 && (
-              <Typography variant="body1" color="text.secondary">
-                Analytics dashboard coming soon...
-              </Typography>
-            )}
           </Box>
         </StyledPaper>
       </Container>

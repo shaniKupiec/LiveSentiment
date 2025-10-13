@@ -13,8 +13,7 @@ import {
   CircularProgress,
   Tooltip,
   Paper,
-  Switch,
-  FormControlLabel
+  keyframes
 } from '@mui/material';
 import {
   Add,
@@ -55,6 +54,19 @@ import { QuestionType as QuestionTypeValues } from '../types/question';
 import type { Presentation } from '../types/presentation';
 import { apiService } from '../services/api';
 
+// Pulse animation for live status
+const pulse = keyframes`
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
+`;
+
 interface QuestionsManagementProps {
   presentation: Presentation;
   questions: Question[];
@@ -68,7 +80,6 @@ const SortableQuestionItem: React.FC<{
   index: number;
   onEdit: (question: Question) => void;
   onDelete: (question: Question) => void;
-  onToggleActive: (question: Question) => void;
   operationLoading: string | null;
   getQuestionTypeIcon: (type: QuestionType) => React.ReactElement;
   getQuestionTypeLabel: (type: QuestionType) => string;
@@ -78,7 +89,6 @@ const SortableQuestionItem: React.FC<{
   index, 
   onEdit, 
   onDelete, 
-  onToggleActive, 
   operationLoading,
   getQuestionTypeIcon,
   getQuestionTypeLabel,
@@ -171,6 +181,18 @@ const SortableQuestionItem: React.FC<{
                   color="error"
                 />
               )}
+              {question.isLive && (
+                <Chip 
+                  label="LIVE" 
+                  size="small" 
+                  sx={{
+                    backgroundColor: '#4CAF50',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    animation: `${pulse} 2s infinite`
+                  }}
+                />
+              )}
             </Box>
             <Typography variant="body2" color="text.secondary">
               {question.responseCount} responses
@@ -182,19 +204,6 @@ const SortableQuestionItem: React.FC<{
 
       <ListItemSecondaryAction>
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={question.isActive}
-                onChange={() => onToggleActive(question)}
-                disabled={operationLoading === question.id}
-                size="small"
-              />
-            }
-            label={question.isActive ? 'Active' : 'Inactive'}
-            labelPlacement="top"
-            sx={{ mr: 1 }}
-          />
           <Tooltip title="Edit question">
             <IconButton
               onClick={() => onEdit(question)}
@@ -252,8 +261,6 @@ const QuestionsManagement: React.FC<QuestionsManagementProps> = ({
         return <LinearScale color="primary" />;
       case QuestionTypeValues.YesNo:
         return <QuestionAnswer color="primary" />;
-      case QuestionTypeValues.SliderScale:
-        return <LinearScale color="primary" />;
       case QuestionTypeValues.OpenEnded:
         return <TextFields color="primary" />;
       case QuestionTypeValues.WordCloud:
@@ -273,8 +280,6 @@ const QuestionsManagement: React.FC<QuestionsManagementProps> = ({
         return 'Numeric Rating';
       case QuestionTypeValues.YesNo:
         return 'Yes/No';
-      case QuestionTypeValues.SliderScale:
-        return 'Slider Scale';
       case QuestionTypeValues.OpenEnded:
         return 'Open Ended';
       case QuestionTypeValues.WordCloud:
@@ -308,24 +313,6 @@ const QuestionsManagement: React.FC<QuestionsManagementProps> = ({
     setIsDeleteDialogOpen(true);
   };
 
-  const handleToggleQuestionActive = async (question: Question) => {
-    try {
-      setOperationLoading(question.id);
-      setError(null);
-      
-      await apiService.toggleQuestionActive(presentation.id, question.id, !question.isActive);
-      
-      const updatedQuestion = { ...question, isActive: !question.isActive };
-      const updatedQuestions = questions.map(q => 
-        q.id === question.id ? updatedQuestion : q
-      );
-      onQuestionsChange(updatedQuestions);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to toggle question status');
-    } finally {
-      setOperationLoading(null);
-    }
-  };
 
   const handleFormSubmit = async (data: QuestionFormData) => {
     try {
@@ -480,7 +467,6 @@ const QuestionsManagement: React.FC<QuestionsManagementProps> = ({
                   index={index}
                   onEdit={handleEditQuestion}
                   onDelete={handleDeleteQuestion}
-                  onToggleActive={handleToggleQuestionActive}
                   operationLoading={operationLoading}
                   getQuestionTypeIcon={getQuestionTypeIcon}
                   getQuestionTypeLabel={getQuestionTypeLabel}
@@ -501,7 +487,6 @@ const QuestionsManagement: React.FC<QuestionsManagementProps> = ({
         }}
         onSubmit={handleFormSubmit}
         question={editingQuestion}
-        presentationId={presentation.id}
         order={questions.length + 1}
         isLoading={operationLoading === 'form'}
       />

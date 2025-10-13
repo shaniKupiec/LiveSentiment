@@ -77,8 +77,7 @@ namespace LiveSentiment.Controllers
                 Id = Guid.NewGuid(),
                 Name = request.Name,
                 Email = request.Email,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-                LoginMethod = "email"
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password)
             };
 
             _context.Presenters.Add(presenter);
@@ -90,8 +89,8 @@ namespace LiveSentiment.Controllers
                 {
                     Id = Guid.NewGuid(),
                     PresenterId = presenter.Id,
-                    Name = "Positive",
-                    Color = "#4CAF50",
+                    Name = "Academic",
+                    Color = "#BAE1FF", // Pastel Blue
                     CreatedDate = DateTime.UtcNow,
                     LastUpdated = DateTime.UtcNow,
                     IsActive = true
@@ -100,8 +99,8 @@ namespace LiveSentiment.Controllers
                 {
                     Id = Guid.NewGuid(),
                     PresenterId = presenter.Id,
-                    Name = "Negative",
-                    Color = "#F44336",
+                    Name = "Work",
+                    Color = "#BAFFC9", // Pastel Green
                     CreatedDate = DateTime.UtcNow,
                     LastUpdated = DateTime.UtcNow,
                     IsActive = true
@@ -110,8 +109,8 @@ namespace LiveSentiment.Controllers
                 {
                     Id = Guid.NewGuid(),
                     PresenterId = presenter.Id,
-                    Name = "Neutral",
-                    Color = "#9E9E9E",
+                    Name = "Events",
+                    Color = "#FFB3F7", // Pastel Purple
                     CreatedDate = DateTime.UtcNow,
                     LastUpdated = DateTime.UtcNow,
                     IsActive = true
