@@ -87,6 +87,15 @@ dotnet restore
 
 ---
 
-## 6. Notes
+## 6. Real-time Features
+- **Live Presentations**: Real-time audience interaction with SignalR
+- **Socket Communication**: WebSocket-based real-time updates
+- **Audience View**: Public URL for audience participation
+- **Live Session Management**: Start/stop live sessions with real-time feedback
+
+For detailed information about the real-time features, see [REALTIME_FEATURE_README.md](./REALTIME_FEATURE_README.md).
+
+## 7. Notes
 - For production, always use Docker Compose to ensure all services are networked correctly.
-- For development, you can run frontend and backend separately for faster feedback. 
+- For development, you can run frontend and backend separately for faster feedback.
+- The real-time features require both frontend and backend to be running for full functionality. 

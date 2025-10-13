@@ -29,6 +29,9 @@ namespace LiveSentiment.Models
         public DateTime LastUpdated { get; set; }
         public Guid? LabelId { get; set; }
         public LabelInfo? Label { get; set; }
+        public bool IsLive { get; set; }
+        public DateTime? LiveStartedAt { get; set; }
+        public DateTime? LiveEndedAt { get; set; }
     }
 
     public class LabelInfo

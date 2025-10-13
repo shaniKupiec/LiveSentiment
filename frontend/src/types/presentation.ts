@@ -15,6 +15,9 @@ export interface Presentation {
   labelId?: string;
   label?: LabelInfo;
   questions?: QuestionSummary[];
+  isLive: boolean;
+  liveStartedAt?: string;
+  liveEndedAt?: string;
 }
 
 export interface CreatePresentationRequest {
