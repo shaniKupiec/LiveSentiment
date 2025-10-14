@@ -49,6 +49,9 @@ namespace LiveSentiment.Services
                     EnableKeywordExtraction = q.EnableKeywordExtraction,
                     Order = q.Order,
                     IsActive = q.IsActive,
+                    IsLive = q.IsLive,
+                    LiveStartedAt = q.LiveStartedAt,
+                    LiveEndedAt = q.LiveEndedAt,
                     CreatedDate = q.CreatedDate,
                     LastUpdated = q.LastUpdated,
                     ResponseCount = q.Responses.Count
@@ -82,6 +85,9 @@ namespace LiveSentiment.Services
                 EnableKeywordExtraction = question.EnableKeywordExtraction,
                 Order = question.Order,
                 IsActive = question.IsActive,
+                IsLive = question.IsLive,
+                LiveStartedAt = question.LiveStartedAt,
+                LiveEndedAt = question.LiveEndedAt,
                 CreatedDate = question.CreatedDate,
                 LastUpdated = question.LastUpdated,
                 ResponseCount = question.Responses.Count

@@ -138,6 +138,9 @@ namespace LiveSentiment.Models
         public bool EnableKeywordExtraction { get; set; }
         public int Order { get; set; }
         public bool IsActive { get; set; }
+        public bool IsLive { get; set; }
+        public DateTime? LiveStartedAt { get; set; }
+        public DateTime? LiveEndedAt { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime LastUpdated { get; set; }
         public int ResponseCount { get; set; }
@@ -150,6 +153,9 @@ namespace LiveSentiment.Models
         public QuestionType Type { get; set; }
         public int Order { get; set; }
         public bool IsActive { get; set; }
+        public bool IsLive { get; set; }
+        public DateTime? LiveStartedAt { get; set; }
+        public DateTime? LiveEndedAt { get; set; }
         public bool EnableSentimentAnalysis { get; set; }
         public int ResponseCount { get; set; }
     }
