@@ -355,7 +355,7 @@ options.Events = new JwtBearerEvents
 
 ## 📱 **Question Types Supported**
 
-### **1. Multiple Choice (Single)**
+### **1. Single Choice**
 ```json
 {
   "type": 1,
@@ -365,7 +365,7 @@ options.Events = new JwtBearerEvents
 }
 ```
 
-### **2. Multiple Choice (Multiple)**
+### **2. Multiple Choice**
 ```json
 {
   "type": 2,
@@ -500,6 +500,36 @@ docker-compose up --build
 - Connection status monitoring
 
 ## 🆕 **Recent Improvements (v1.1.0)**
+
+### **Performance Optimizations - Fixed Jumping Behavior**
+
+#### **Issue Identified**
+The frontend was experiencing a "jumping" behavior every second due to several performance issues in the QuestionResponseAccordion component.
+
+#### **Root Causes Identified**
+1. **Aggressive Polling**: Was polling every 3 seconds, now reduced to 10 seconds
+2. **Layout Instability**: Fixed height conflicts between TabPanel (400px) and table container
+3. **Unnecessary Re-renders**: Table rows were re-rendering on every data update
+
+#### **Solutions Implemented**
+1. **Reduced Polling Frequency**: Changed from 3 seconds to 10 seconds
+2. **Fixed Layout Heights**:
+   - Set consistent 400px height for the main container
+   - Set fixed 300px height for table container with proper overflow
+3. **Performance Optimizations**:
+   - Added memoization for table rows to prevent unnecessary re-renders
+   - Added pagination reset when search changes to prevent layout jumps
+   - Optimized filtering and sorting with proper useMemo dependencies
+
+#### **How the Frontend Loads Responses**
+The frontend uses a **hybrid data fetching strategy**:
+
+1. **Real-time Updates**: SignalR connection for instant updates when new responses arrive
+2. **Polling Backup**: Every 10 seconds (reduced from 3 seconds) to ensure data consistency
+3. **Manual Refresh**: Users can manually refresh data using the refresh button
+4. **Debounced Updates**: SignalR updates are debounced to prevent rapid successive fetches
+
+The jumping behavior should now be significantly reduced or eliminated. The table will have a stable layout and only update when there are actual changes to the data, not on every polling cycle.
 
 ### **Enhanced Audience Experience**
 

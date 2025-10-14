@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import type { Presentation, PresentationFormData } from '../types/presentation';
 import type { Label } from '../types/label';
-import { apiService } from '../services/api';
+import { usePresentations } from '../contexts/PresentationContext';
 
 interface PresentationFormProps {
   open: boolean;
@@ -32,14 +32,13 @@ const PresentationForm: React.FC<PresentationFormProps> = ({
   presentation,
   isLoading = false
 }) => {
+  const { activeLabels, labelsLoading, fetchLabels } = usePresentations();
   const [formData, setFormData] = useState<PresentationFormData>({
     title: '',
     labelId: ''
   });
   const [errors, setErrors] = useState<Partial<PresentationFormData>>({});
   const [touched, setTouched] = useState<Partial<PresentationFormData>>({});
-  const [labels, setLabels] = useState<Label[]>([]);
-  const [labelsLoading, setLabelsLoading] = useState(false);
 
   const isEditMode = !!presentation;
 
@@ -47,7 +46,7 @@ const PresentationForm: React.FC<PresentationFormProps> = ({
     if (open) {
       fetchLabels();
     }
-  }, [open]);
+  }, [open, fetchLabels]);
 
   useEffect(() => {
     if (presentation) {
@@ -65,18 +64,6 @@ const PresentationForm: React.FC<PresentationFormProps> = ({
     setTouched({});
   }, [presentation, open]);
 
-  const fetchLabels = async () => {
-    try {
-      setLabelsLoading(true);
-      const activeLabels = await apiService.getActiveLabels();
-      setLabels(activeLabels);
-    } catch (error) {
-      console.error('Error fetching labels:', error);
-      // Don't show error to user, just log it
-    } finally {
-      setLabelsLoading(false);
-    }
-  };
 
   const validateForm = (): boolean => {
     const newErrors: Partial<PresentationFormData> = {};
@@ -170,10 +157,10 @@ const PresentationForm: React.FC<PresentationFormProps> = ({
               >
                 {labelsLoading ? (
                   <MenuItem disabled>Loading labels...</MenuItem>
-                ) : labels.length === 0 ? (
+                ) : activeLabels.length === 0 ? (
                   <MenuItem disabled>No labels available</MenuItem>
                 ) : (
-                  labels.map((label) => (
+                  activeLabels.map((label) => (
                     <MenuItem key={label.id} value={label.id}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Box

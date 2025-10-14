@@ -534,7 +534,7 @@ const PresentationsManagement: React.FC<PresentationsManagementProps> = ({
                       <TableCell>{formatDate(presentation.lastUpdated)}</TableCell>
                       <TableCell align="center">
                         <Typography variant="body1" fontWeight="medium">
-                          {presentation.questions?.length || 0}
+                          {presentation.questionCount}
                         </Typography>
                       </TableCell>
                     </TableRow>

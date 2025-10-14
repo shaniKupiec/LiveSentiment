@@ -556,6 +556,19 @@ namespace LiveSentiment.Controllers
         {
             // This is a placeholder for text analysis
             // In a real implementation, you would integrate with NLP services
+            
+            if (!responses.Any())
+            {
+                return new TextAnalysis
+                {
+                    TotalResponses = 0,
+                    AverageLength = 0,
+                    CommonWords = new Dictionary<string, int>(),
+                    SentimentDistribution = new Dictionary<string, int>(),
+                    EmotionDistribution = new Dictionary<string, int>()
+                };
+            }
+
             return new TextAnalysis
             {
                 TotalResponses = responses.Count,

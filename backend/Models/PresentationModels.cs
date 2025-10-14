@@ -32,6 +32,7 @@ namespace LiveSentiment.Models
         public bool IsLive { get; set; }
         public DateTime? LiveStartedAt { get; set; }
         public DateTime? LiveEndedAt { get; set; }
+        public int QuestionCount { get; set; }
     }
 
     public class LabelInfo

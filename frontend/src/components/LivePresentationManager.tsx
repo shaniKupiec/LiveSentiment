@@ -8,17 +8,11 @@ import {
   Chip,
   Alert,
   CircularProgress,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Paper,
-  Divider
+  Paper
 } from "@mui/material";
 import {
   PlayArrow,
@@ -28,33 +22,58 @@ import {
   QuestionAnswer,
   Cancel
 } from "@mui/icons-material";
-import { styled } from "@mui/material/styles";
+import { styled, keyframes } from "@mui/material/styles";
 import { useSignalR } from "../hooks/useSignalR";
+
+// Pulse animation for live status
+const pulse = keyframes`
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
+`;
 import { apiService } from "../services/api";
 import type { Question } from "../types/question";
 import { QuestionType } from "../types/question";
 import type { ResponseReceivedEvent, AudienceCountUpdatedEvent } from "../types/signalr";
+import QuestionResponseAccordion from "./QuestionResponseAccordion";
 
-const LiveCard = styled(Card)(({ theme }) => ({
-  backgroundColor: theme.palette.success.light,
-  color: theme.palette.success.contrastText,
+const CombinedStatusCard = styled(Card)(({ theme }) => ({
   marginBottom: theme.spacing(2),
+  border: `1px solid ${theme.palette.success.main}20`, // 20% opacity
+  backgroundColor: `${theme.palette.success.main}08`, // 8% opacity
 }));
 
-const QuestionCard = styled(Card)(({ theme }) => ({
-  marginBottom: theme.spacing(1),
-  border: `2px solid ${theme.palette.primary.main}`,
-}));
-
-const StatsCard = styled(Paper)(({ theme }) => ({
+const StatusSection = styled(Box)(({ theme }) => ({
   padding: theme.spacing(2),
+  borderRight: `1px solid ${theme.palette.divider}`,
+  flex: 1,
+}));
+
+const StatsSection = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(2),
+  flex: 1,
+  display: 'flex',
+  gap: theme.spacing(2),
+}));
+
+const StatItem = styled(Box)(({ theme }) => ({
   textAlign: 'center',
-  backgroundColor: theme.palette.primary.light,
-  color: theme.palette.primary.contrastText,
+  flex: 1,
+  padding: theme.spacing(1),
+  border: `1px solid ${theme.palette.primary.main}20`, // 20% opacity
+  borderRadius: theme.shape.borderRadius,
+  backgroundColor: `${theme.palette.primary.main}08`, // 8% opacity
 }));
 
 interface LivePresentationManagerProps {
   presentationId: string;
+  presentationName?: string;
   questions: Question[];
 }
 
@@ -98,6 +117,7 @@ interface QuestionResults {
 
 const LivePresentationManager: React.FC<LivePresentationManagerProps> = ({
   presentationId,
+  presentationName,
   questions
 }) => {
   const [liveStatus, setLiveStatus] = useState<LiveSessionStatus | null>(null);
@@ -105,6 +125,7 @@ const LivePresentationManager: React.FC<LivePresentationManagerProps> = ({
   const [questionResults, setQuestionResults] = useState<QuestionResults | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const [expandedAccordion, setExpandedAccordion] = useState<string | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
     title: string;
@@ -204,8 +225,46 @@ const LivePresentationManager: React.FC<LivePresentationManagerProps> = ({
     try {
       const results = await apiService.getQuestionResults(presentationId, questionId);
       setQuestionResults(results);
+      return results;
     } catch (err) {
       console.error('Failed to load question results:', err);
+      throw err;
+    }
+  };
+
+  const handleAccordionToggle = (questionId: string) => {
+    setExpandedAccordion(expandedAccordion === questionId ? null : questionId);
+  };
+
+  const handleActivateQuestion = async (questionId: string) => {
+    try {
+      setLoading(true);
+      await activateQuestion(questionId);
+      const status = await apiService.getLiveSessionStatus(presentationId);
+      setLiveStatus(status);
+      await loadQuestionResults(questionId);
+      setError('');
+    } catch (err) {
+      console.error('Failed to activate question:', err);
+      setError('Failed to activate question');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeactivateQuestion = async (questionId: string) => {
+    try {
+      setLoading(true);
+      await deactivateQuestion(questionId);
+      const status = await apiService.getLiveSessionStatus(presentationId);
+      setLiveStatus(status);
+      setQuestionResults(null);
+      setError('');
+    } catch (err) {
+      console.error('Failed to deactivate question:', err);
+      setError('Failed to deactivate question');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -256,37 +315,6 @@ const LivePresentationManager: React.FC<LivePresentationManagerProps> = ({
     });
   };
 
-  const handleActivateQuestion = async (questionId: string) => {
-    try {
-      setLoading(true);
-      await activateQuestion(questionId);
-      const status = await apiService.getLiveSessionStatus(presentationId);
-      setLiveStatus(status);
-      await loadQuestionResults(questionId);
-      setError('');
-    } catch (err) {
-      console.error('Failed to activate question:', err);
-      setError('Failed to activate question');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDeactivateQuestion = async (questionId: string) => {
-    try {
-      setLoading(true);
-      await deactivateQuestion(questionId);
-      const status = await apiService.getLiveSessionStatus(presentationId);
-      setLiveStatus(status);
-      setQuestionResults(null);
-      setError('');
-    } catch (err) {
-      console.error('Failed to deactivate question:', err);
-      setError('Failed to deactivate question');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const renderConnectionStatus = () => {
     if (isConnecting) {
@@ -310,37 +338,50 @@ const LivePresentationManager: React.FC<LivePresentationManagerProps> = ({
 
     if (liveStatus.isLive) {
       return (
-        <LiveCard>
-          <CardContent>
-            <Box display="flex" justifyContent="space-between" alignItems="center">
-              <Box>
-                <Typography variant="h6" gutterBottom>
+        <CombinedStatusCard>
+          <Box display="flex">
+            <StatusSection>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                <Typography variant="h6" color="success.main">
                   🟢 Live Session Active
                 </Typography>
-                <Typography variant="body2">
-                  Started: {new Date(liveStatus.liveStartedAt!).toLocaleTimeString()}
+                <Box display="flex" gap={1}>
+                  {renderConnectionStatus()}
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    startIcon={<Stop />}
+                    onClick={handleStopLiveSession}
+                    disabled={loading}
+                    size="small"
+                  >
+                    Stop Live
+                  </Button>
+                </Box>
+              </Box>
+              <Typography variant="body2" color="text.secondary">
+                Started: {new Date(liveStatus.liveStartedAt!).toLocaleTimeString()}
+              </Typography>
+              {liveStatus.activeQuestionId && (
+                <Typography variant="body2" color="text.secondary">
+                  Active Question: {liveStatus.activeQuestionText}
                 </Typography>
-                {liveStatus.activeQuestionId && (
-                  <Typography variant="body2">
-                    Active Question: {liveStatus.activeQuestionText}
-                  </Typography>
-                )}
-              </Box>
-              <Box display="flex" gap={1}>
-                {renderConnectionStatus()}
-                <Button
-                  variant="contained"
-                  color="error"
-                  startIcon={<Stop />}
-                  onClick={handleStopLiveSession}
-                  disabled={loading}
-                >
-                  Stop Live
-                </Button>
-              </Box>
-            </Box>
-          </CardContent>
-        </LiveCard>
+              )}
+            </StatusSection>
+            <StatsSection>
+              <StatItem>
+                <People fontSize="large" color="primary" />
+                <Typography variant="h4" color="primary.main">{audienceCount}</Typography>
+                <Typography variant="body2" color="text.secondary">Audience Members</Typography>
+              </StatItem>
+              <StatItem>
+                <QuestionAnswer fontSize="large" color="primary" />
+                <Typography variant="h4" color="primary.main">{questionResults?.totalResponses || 0}</Typography>
+                <Typography variant="body2" color="text.secondary">Total Responses</Typography>
+              </StatItem>
+            </StatsSection>
+          </Box>
+        </CombinedStatusCard>
       );
     }
 
@@ -375,22 +416,20 @@ const LivePresentationManager: React.FC<LivePresentationManagerProps> = ({
   };
 
   const renderAudienceStats = () => {
-    if (!liveStatus?.isLive) return null;
+    // This function is no longer needed as stats are now integrated into the status card
+    return null;
+  };
 
-    return (
-      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-        <StatsCard sx={{ flex: 1 }}>
-          <People fontSize="large" />
-          <Typography variant="h4">{audienceCount}</Typography>
-          <Typography variant="body2">Audience Members</Typography>
-        </StatsCard>
-        <StatsCard sx={{ flex: 1 }}>
-          <QuestionAnswer fontSize="large" />
-          <Typography variant="h4">{questionResults?.totalResponses || 0}</Typography>
-          <Typography variant="body2">Total Responses</Typography>
-        </StatsCard>
-      </Box>
-    );
+  const getQuestionTypeName = (type: number): string => {
+    switch (type) {
+      case QuestionType.MultipleChoiceSingle: return 'Single Choice';
+      case QuestionType.MultipleChoiceMultiple: return 'Multiple Choice';
+      case QuestionType.NumericRating: return 'Numeric Rating';
+      case QuestionType.YesNo: return 'Yes/No';
+      case QuestionType.OpenEnded: return 'Open Ended';
+      case QuestionType.WordCloud: return 'Word Cloud';
+      default: return 'Unknown';
+    }
   };
 
   const renderQuestions = () => {
@@ -401,107 +440,101 @@ const LivePresentationManager: React.FC<LivePresentationManagerProps> = ({
         <Typography variant="h6" gutterBottom>
           Questions ({activeQuestions.length})
         </Typography>
-        <List>
-          {activeQuestions.map((question) => (
-            <QuestionCard key={question.id}>
-              <ListItem>
-                <ListItemText
-                  primary={question.text}
-                  secondary={`Type: ${getQuestionTypeName(question.type)} • Order: ${question.order}`}
-                />
-                <ListItemSecondaryAction>
-                  {liveStatus?.activeQuestionId === question.id ? (
-                    <Box display="flex" gap={1}>
-                      <Chip label="ACTIVE" color="success" size="small" />
-                      <IconButton
-                        color="error"
-                        onClick={() => handleDeactivateQuestion(question.id)}
-                        disabled={loading}
-                      >
-                        <Cancel />
-                      </IconButton>
-                    </Box>
-                  ) : (
-                    <IconButton
-                      color="primary"
-                      onClick={() => handleActivateQuestion(question.id)}
-                      disabled={loading || !liveStatus?.isLive}
-                    >
-                      <Send />
-                    </IconButton>
+        
+        {activeQuestions.map((question, index) => (
+          <Box key={question.id} sx={{ mb: 2 }}>
+            <Paper sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Box sx={{ flexGrow: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                  <Typography variant="body1" fontWeight="medium">
+                    {index + 1}. {question.text}
+                  </Typography>
+                  {question.isLive && (
+                    <Chip
+                      label="LIVE"
+                      size="small"
+                      sx={{
+                        backgroundColor: '#4CAF50',
+                        color: 'white',
+                        fontWeight: 'bold',
+                        animation: `${pulse} 2s infinite`
+                      }}
+                    />
                   )}
-                </ListItemSecondaryAction>
-              </ListItem>
-            </QuestionCard>
-          ))}
-        </List>
-      </Box>
-    );
-  };
-
-  const renderQuestionResults = () => {
-    if (!questionResults || !liveStatus?.activeQuestionId) return null;
-
-    return (
-      <Box sx={{ mt: 2 }}>
-        <Typography variant="h6" gutterBottom>
-          Live Results
-        </Typography>
-        <Paper sx={{ p: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            {questionResults.questionText}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            {questionResults.totalResponses} responses from {questionResults.uniqueSessions} participants
-          </Typography>
-          
-          <Divider sx={{ my: 2 }} />
-          
-          {questionResults.choiceCounts && (
-            <Box>
-              <Typography variant="subtitle1" gutterBottom>Choice Distribution:</Typography>
-              {Object.entries(questionResults.choiceCounts).map(([choice, count]) => (
-                <Box key={choice} display="flex" justifyContent="space-between" mb={1}>
-                  <Typography>{choice}</Typography>
-                  <Typography>{count}</Typography>
                 </Box>
-              ))}
-            </Box>
-          )}
-          
-          {questionResults.numericStats && (
-            <Box>
-              <Typography variant="subtitle1" gutterBottom>Numeric Statistics:</Typography>
-              <Typography>Average: {questionResults.numericStats.average.toFixed(2)}</Typography>
-              <Typography>Min: {questionResults.numericStats.min}</Typography>
-              <Typography>Max: {questionResults.numericStats.max}</Typography>
-              <Typography>Median: {questionResults.numericStats.median}</Typography>
-            </Box>
-          )}
-          
-          {questionResults.yesNoCounts && (
-            <Box>
-              <Typography variant="subtitle1" gutterBottom>Yes/No Results:</Typography>
-              <Typography>Yes: {questionResults.yesNoCounts.yes}</Typography>
-              <Typography>No: {questionResults.yesNoCounts.no}</Typography>
-            </Box>
-          )}
-        </Paper>
+                <Typography variant="caption" color="text.secondary">
+                  {getQuestionTypeName(question.type)}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                {liveStatus?.activeQuestionId === question.id ? (
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<Cancel />}
+                    onClick={() => handleDeactivateQuestion(question.id)}
+                    disabled={loading}
+                    sx={{
+                      backgroundColor: 'transparent',
+                      color: '#4CAF50',
+                      borderColor: '#4CAF50',
+                      '&:hover': {
+                        backgroundColor: '#f5f5f5',
+                      }
+                    }}
+                  >
+                    Finish Live
+                  </Button>
+                ) : (
+                  <Button
+                    variant="contained"
+                    size="small"
+                    startIcon={<Send />}
+                    onClick={() => handleActivateQuestion(question.id)}
+                    disabled={loading || !liveStatus?.isLive}
+                    sx={{
+                      backgroundColor: '#4CAF50',
+                      color: 'white',
+                      '&:hover': {
+                        backgroundColor: '#45a049',
+                      }
+                    }}
+                  >
+                    Go Live
+                  </Button>
+                )}
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => handleAccordionToggle(question.id)}
+                  sx={{
+                    borderColor: '#2196F3',
+                    color: '#2196F3',
+                    '&:hover': {
+                      backgroundColor: '#f3f8ff',
+                    }
+                  }}
+                >
+                  View Responses
+                </Button>
+              </Box>
+            </Paper>
+            
+            {/* Accordion for this question */}
+            <QuestionResponseAccordion
+              question={question}
+              presentationId={presentationId}
+              presentationName={presentationName}
+              isExpanded={expandedAccordion === question.id}
+              onToggle={handleAccordionToggle}
+            />
+          </Box>
+        ))}
       </Box>
     );
   };
 
-  const getQuestionTypeName = (type: number): string => {
-    switch (type) {
-      case QuestionType.MultipleChoiceSingle: return 'Multiple Choice (Single)';
-      case QuestionType.MultipleChoiceMultiple: return 'Multiple Choice (Multiple)';
-      case QuestionType.NumericRating: return 'Numeric Rating';
-      case QuestionType.YesNo: return 'Yes/No';
-      case QuestionType.OpenEnded: return 'Open Ended';
-      case QuestionType.WordCloud: return 'Word Cloud';
-      default: return 'Unknown';
-    }
-  };
+
 
   return (
     <Box>
@@ -512,9 +545,7 @@ const LivePresentationManager: React.FC<LivePresentationManagerProps> = ({
       )}
 
       {renderLiveStatus()}
-      {renderAudienceStats()}
       {renderQuestions()}
-      {renderQuestionResults()}
 
       <Dialog
         open={confirmDialog.open}
