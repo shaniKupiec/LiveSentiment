@@ -35,6 +35,7 @@ namespace LiveSentiment.Controllers
 
             var presentations = await _context.Presentations
                 .Include(p => p.Label)
+                .Include(p => p.Questions)
                 .Where(p => p.PresenterId == presenterId)
                 .OrderByDescending(p => p.CreatedDate)
                 .Select(p => new PresentationResponse
@@ -53,7 +54,8 @@ namespace LiveSentiment.Controllers
                     } : null,
                     IsLive = p.IsLive,
                     LiveStartedAt = p.LiveStartedAt,
-                    LiveEndedAt = p.LiveEndedAt
+                    LiveEndedAt = p.LiveEndedAt,
+                    QuestionCount = p.Questions.Count
                 })
                 .ToListAsync();
 
@@ -73,6 +75,7 @@ namespace LiveSentiment.Controllers
 
             var presentation = await _context.Presentations
                 .Include(p => p.Label)
+                .Include(p => p.Questions)
                 .FirstOrDefaultAsync(p => p.Id == id && p.PresenterId == presenterId);
 
             if (presentation == null)
@@ -96,7 +99,8 @@ namespace LiveSentiment.Controllers
                 } : null,
                 IsLive = presentation.IsLive,
                 LiveStartedAt = presentation.LiveStartedAt,
-                LiveEndedAt = presentation.LiveEndedAt
+                LiveEndedAt = presentation.LiveEndedAt,
+                QuestionCount = presentation.Questions.Count
             };
 
             return this.Success(response);
@@ -114,6 +118,7 @@ namespace LiveSentiment.Controllers
 
             var presentations = await _context.Presentations
                 .Include(p => p.Label)
+                .Include(p => p.Questions)
                 .Where(p => p.PresenterId == presenterId && p.LabelId == labelId)
                 .OrderByDescending(p => p.CreatedDate)
                 .Select(p => new PresentationResponse
@@ -132,7 +137,8 @@ namespace LiveSentiment.Controllers
                     } : null,
                     IsLive = p.IsLive,
                     LiveStartedAt = p.LiveStartedAt,
-                    LiveEndedAt = p.LiveEndedAt
+                    LiveEndedAt = p.LiveEndedAt,
+                    QuestionCount = p.Questions.Count
                 })
                 .ToListAsync();
 
@@ -151,6 +157,7 @@ namespace LiveSentiment.Controllers
 
             var presentations = await _context.Presentations
                 .Include(p => p.Label)
+                .Include(p => p.Questions)
                 .Where(p => p.PresenterId == presenterId && p.Label != null && p.Label.Name == labelName)
                 .OrderByDescending(p => p.CreatedDate)
                 .Select(p => new PresentationResponse
@@ -169,7 +176,8 @@ namespace LiveSentiment.Controllers
                     } : null,
                     IsLive = p.IsLive,
                     LiveStartedAt = p.LiveStartedAt,
-                    LiveEndedAt = p.LiveEndedAt
+                    LiveEndedAt = p.LiveEndedAt,
+                    QuestionCount = p.Questions.Count
                 })
                 .ToListAsync();
 
@@ -232,7 +240,11 @@ namespace LiveSentiment.Controllers
                     Name = presentation.Label.Name,
                     Color = presentation.Label.Color,
                     IsActive = presentation.Label.IsActive
-                } : null
+                } : null,
+                IsLive = presentation.IsLive,
+                LiveStartedAt = presentation.LiveStartedAt,
+                LiveEndedAt = presentation.LiveEndedAt,
+                QuestionCount = 0 // New presentations have no questions
             };
 
             return this.Success(response);
@@ -295,6 +307,7 @@ namespace LiveSentiment.Controllers
 
             // Reload the presentation with label information to return the response
             await _context.Entry(presentation).Reference(p => p.Label).LoadAsync();
+            await _context.Entry(presentation).Collection(p => p.Questions).LoadAsync();
 
             var response = new PresentationResponse
             {
@@ -309,7 +322,11 @@ namespace LiveSentiment.Controllers
                     Name = presentation.Label.Name,
                     Color = presentation.Label.Color,
                     IsActive = presentation.Label.IsActive
-                } : null
+                } : null,
+                IsLive = presentation.IsLive,
+                LiveStartedAt = presentation.LiveStartedAt,
+                LiveEndedAt = presentation.LiveEndedAt,
+                QuestionCount = presentation.Questions.Count
             };
 
             return this.Success(response);
@@ -380,7 +397,10 @@ namespace LiveSentiment.Controllers
                     Type = q.Type,
                     Order = q.Order,
                     IsActive = q.IsActive,
-    
+                    IsLive = q.IsLive,
+                    LiveStartedAt = q.LiveStartedAt,
+                    LiveEndedAt = q.LiveEndedAt,
+                    EnableSentimentAnalysis = q.EnableSentimentAnalysis,
                     ResponseCount = q.Responses.Count
                 }).ToList()
             };
