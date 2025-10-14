@@ -17,12 +17,12 @@ import {
 import { Edit, Delete, Add, RestoreFromTrash } from '@mui/icons-material';
 import type { Label, CreateLabelRequest, UpdateLabelRequest } from '../types/label';
 import { apiService } from '../services/api';
+import { usePresentations } from '../contexts/PresentationContext';
 import LabelForm from './LabelForm';
 import DeleteConfirmationDialog from './DeleteConfirmationDialog';
 
 const LabelsManagement: React.FC = () => {
-  const [allLabels, setAllLabels] = useState<Label[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { labels, labelsLoading, addLabel, updateLabel, fetchLabels } = usePresentations();
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingLabel, setEditingLabel] = useState<Label | null>(null);
@@ -32,26 +32,13 @@ const LabelsManagement: React.FC = () => {
 
   useEffect(() => {
     fetchLabels();
-  }, []);
-
-  const fetchLabels = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const allLabelsData = await apiService.getAllLabels();
-      setAllLabels(allLabelsData);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch labels');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [fetchLabels]);
 
   const handleCreateLabel = async (data: CreateLabelRequest) => {
     try {
       setIsSubmitting(true);
       const newLabel = await apiService.createLabel(data);
-      setAllLabels(prev => [...prev, newLabel]);
+      addLabel(newLabel); // Update the context state
       setShowForm(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create label');
@@ -66,9 +53,7 @@ const LabelsManagement: React.FC = () => {
     try {
       setIsSubmitting(true);
       const updatedLabel = await apiService.updateLabel(editingLabel.id, data);
-      setAllLabels(prev => prev.map(label => 
-        label.id === editingLabel.id ? updatedLabel : label
-      ));
+      updateLabel(editingLabel.id, updatedLabel); // Update the context state
       setEditingLabel(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update label');
@@ -83,10 +68,8 @@ const LabelsManagement: React.FC = () => {
     try {
       setIsSubmitting(true);
       await apiService.deleteLabel(deleteLabel.id);
-      // Update both lists - remove from active, mark as inactive in all
-      setAllLabels(prev => prev.map(label => 
-        label.id === deleteLabel.id ? { ...label, isActive: false } : label
-      ));
+      // Update the context state - mark as inactive
+      updateLabel(deleteLabel.id, { isActive: false });
       setDeleteLabel(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete label');
@@ -99,8 +82,8 @@ const LabelsManagement: React.FC = () => {
     try {
       setIsSubmitting(true);
       await apiService.reactivateLabel(labelId);
-      // Refresh labels after reactivation
-      await fetchLabels();
+      // Update the context state - mark as active
+      updateLabel(labelId, { isActive: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to reactivate label');
     } finally {
@@ -124,10 +107,10 @@ const LabelsManagement: React.FC = () => {
     setActiveTab(newValue);
   };
 
-  const activeLabels = allLabels.filter(label => label.isActive);
-  const inactiveLabels = allLabels.filter(label => !label.isActive);
+  const activeLabels = labels.filter(label => label.isActive);
+  const inactiveLabels = labels.filter(label => !label.isActive);
 
-  if (isLoading) {
+  if (labelsLoading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" py={4}>
         <CircularProgress />

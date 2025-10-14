@@ -360,8 +360,8 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
               onChange={(e) => handleTypeChange(e.target.value as QuestionType)}
               label="Question Type"
             >
-              <MenuItem value={QuestionTypeValues.MultipleChoiceSingle}>Multiple Choice (Single)</MenuItem>
-              <MenuItem value={QuestionTypeValues.MultipleChoiceMultiple}>Multiple Choice (Multiple)</MenuItem>
+              <MenuItem value={QuestionTypeValues.MultipleChoiceSingle}>Single Choice</MenuItem>
+              <MenuItem value={QuestionTypeValues.MultipleChoiceMultiple}>Multiple Choice</MenuItem>
               <MenuItem value={QuestionTypeValues.NumericRating}>Numeric Rating</MenuItem>
               <MenuItem value={QuestionTypeValues.YesNo}>Yes/No</MenuItem>
               <MenuItem value={QuestionTypeValues.OpenEnded}>Open Ended</MenuItem>

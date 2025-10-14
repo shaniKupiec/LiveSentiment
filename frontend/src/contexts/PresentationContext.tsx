@@ -23,6 +23,8 @@ type PresentationAction =
   | { type: 'UPDATE_PRESENTATION'; payload: { id: string; updates: Partial<Presentation> } }
   | { type: 'ADD_PRESENTATION'; payload: Presentation }
   | { type: 'REMOVE_PRESENTATION'; payload: string }
+  | { type: 'ADD_LABEL'; payload: Label }
+  | { type: 'UPDATE_LABEL'; payload: { id: string; updates: Partial<Label> } }
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'SET_LAST_FETCH_TIME'; payload: number };
 
@@ -84,6 +86,20 @@ function presentationReducer(state: PresentationState, action: PresentationActio
         selectedPresentation: state.selectedPresentation?.id === action.payload ? null : state.selectedPresentation
       };
     
+    case 'ADD_LABEL':
+      return {
+        ...state,
+        labels: [...state.labels, action.payload]
+      };
+    
+    case 'UPDATE_LABEL':
+      return {
+        ...state,
+        labels: state.labels.map(label => 
+          label.id === action.payload.id ? { ...label, ...action.payload.updates } : label
+        )
+      };
+    
     case 'SET_ERROR':
       return { ...state, error: action.payload, presentationsLoading: false };
     
@@ -112,6 +128,8 @@ interface PresentationContextType {
   updatePresentation: (id: string, updates: Partial<Presentation>) => void;
   addPresentation: (presentation: Presentation) => void;
   removePresentation: (id: string) => void;
+  addLabel: (label: Label) => void;
+  updateLabel: (id: string, updates: Partial<Label>) => void;
   setError: (error: string | null) => void;
   
   // Computed values
@@ -200,6 +218,16 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({ chil
     dispatch({ type: 'REMOVE_PRESENTATION', payload: id });
   }, []);
 
+  // Add label
+  const addLabel = useCallback((label: Label) => {
+    dispatch({ type: 'ADD_LABEL', payload: label });
+  }, []);
+
+  // Update label
+  const updateLabel = useCallback((id: string, updates: Partial<Label>) => {
+    dispatch({ type: 'UPDATE_LABEL', payload: { id, updates } });
+  }, []);
+
   // Set error
   const setError = useCallback((error: string | null) => {
     dispatch({ type: 'SET_ERROR', payload: error });
@@ -212,12 +240,12 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({ chil
   );
 
   const presentationsWithQuestions = useMemo(() => 
-    state.presentations.filter(p => (p.questions?.length || 0) > 0).length, 
+    state.presentations.filter(p => p.questionCount > 0).length, 
     [state.presentations]
   );
 
   const totalQuestions = useMemo(() => 
-    state.presentations.reduce((sum, p) => sum + (p.questions?.length || 0), 0), 
+    state.presentations.reduce((sum, p) => sum + p.questionCount, 0), 
     [state.presentations]
   );
 
@@ -237,6 +265,8 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({ chil
     updatePresentation,
     addPresentation,
     removePresentation,
+    addLabel,
+    updateLabel,
     setError,
     
     // Computed values

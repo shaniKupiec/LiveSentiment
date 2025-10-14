@@ -70,7 +70,7 @@ const pulse = keyframes`
 interface QuestionsManagementProps {
   presentation: Presentation;
   questions: Question[];
-  onQuestionsChange: (questions: Question[]) => void;
+  onQuestionsChange: (questions?: Question[]) => void;
   isLoading?: boolean;
 }
 
@@ -194,9 +194,6 @@ const SortableQuestionItem: React.FC<{
                 />
               )}
             </Box>
-            <Typography variant="body2" color="text.secondary">
-              {question.responseCount} responses
-            </Typography>
           </Box>
         }
         secondaryTypographyProps={{ component: 'div' }}
@@ -245,7 +242,11 @@ const QuestionsManagement: React.FC<QuestionsManagementProps> = ({
 
   // DnD sensors
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Require 8px of movement before drag starts
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -273,9 +274,9 @@ const QuestionsManagement: React.FC<QuestionsManagementProps> = ({
   const getQuestionTypeLabel = (type: QuestionType): string => {
     switch (type) {
       case QuestionTypeValues.MultipleChoiceSingle:
-        return 'Multiple Choice (Single)';
+        return 'Single Choice';
       case QuestionTypeValues.MultipleChoiceMultiple:
-        return 'Multiple Choice (Multiple)';
+        return 'Multiple Choice';
       case QuestionTypeValues.NumericRating:
         return 'Numeric Rating';
       case QuestionTypeValues.YesNo:
