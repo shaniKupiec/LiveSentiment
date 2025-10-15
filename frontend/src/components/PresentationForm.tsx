@@ -14,7 +14,6 @@ import {
   Box
 } from '@mui/material';
 import type { Presentation, PresentationFormData } from '../types/presentation';
-import type { Label } from '../types/label';
 import { usePresentations } from '../contexts/PresentationContext';
 
 interface PresentationFormProps {

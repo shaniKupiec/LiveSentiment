@@ -63,7 +63,7 @@ const PresentationDetailView: React.FC<PresentationDetailViewProps> = ({
   // Use the new context and hooks
   const { selectedPresentation } = usePresentations();
   const { updatePresentation, deletePresentation } = usePresentationOperations();
-  const { startLiveSession, stopLiveSession, loading: liveSessionLoading } = useLiveSessionOperations();
+  const { startLiveSession, loading: liveSessionLoading } = useLiveSessionOperations();
   
   // Use selected presentation from context or fallback to initial
   const presentation = selectedPresentation || initialPresentation;
@@ -95,7 +95,6 @@ const PresentationDetailView: React.FC<PresentationDetailViewProps> = ({
     connect,
     joinPresenterSession,
     startLiveSession: signalRStartLiveSession,
-    endLiveSession: signalREndLiveSession,
   } = useSignalR({ autoConnect: false });
 
   // Presentation state is now managed by the context
@@ -160,28 +159,28 @@ const PresentationDetailView: React.FC<PresentationDetailViewProps> = ({
   };
 
 
-  const handleStopLiveSession = async () => {
-    try {
-      // Update local state optimistically - deactivate all questions
-      setQuestions(prevQuestions => 
-        prevQuestions.map(q => ({
-          ...q,
-          isLive: false,
-          liveEndedAt: new Date().toISOString()
-        }))
-      );
-      
-      // Stop live session via API (with optimistic updates)
-      await stopLiveSession(presentation.id);
-      
-      // Stop live session via SignalR
-      await signalREndLiveSession(presentation.id);
-      
-    } catch (error) {
-      console.error('Failed to stop live session:', error);
-      setError('Failed to stop live session');
-    }
-  };
+  // const handleStopLiveSession = async () => {
+  //   try {
+  //     // Update local state optimistically - deactivate all questions
+  //     setQuestions(prevQuestions => 
+  //       prevQuestions.map(q => ({
+  //         ...q,
+  //         isLive: false,
+  //         liveEndedAt: new Date().toISOString()
+  //       }))
+  //     );
+  //     
+  //     // Stop live session via API (with optimistic updates)
+  //     await stopLiveSession(presentation.id);
+  //     
+  //     // Stop live session via SignalR
+  //     await signalREndLiveSession(presentation.id);
+  //     
+  //   } catch (error) {
+  //     console.error('Failed to stop live session:', error);
+  //     setError('Failed to stop live session');
+  //   }
+  // };
 
   const handleUpdatePresentation = async (formData: any) => {
     try {

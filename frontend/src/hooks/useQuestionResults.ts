@@ -196,8 +196,8 @@ export const useQuestionResults = ({
  */
 export const useMultipleQuestionResults = (
   presentationId: string,
-  questionIds: string[],
-  options?: {
+  _questionIds: string[],
+  _options?: {
     pollingInterval?: number;
     enableRealTime?: boolean;
     enablePolling?: boolean;
