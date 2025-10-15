@@ -415,10 +415,6 @@ const LivePresentationManager: React.FC<LivePresentationManagerProps> = ({
     );
   };
 
-  const renderAudienceStats = () => {
-    // This function is no longer needed as stats are now integrated into the status card
-    return null;
-  };
 
   const getQuestionTypeName = (type: number): string => {
     switch (type) {

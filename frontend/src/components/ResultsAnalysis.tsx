@@ -108,7 +108,7 @@ const ResultsAnalysis: React.FC<ResultsAnalysisProps> = ({
         View detailed results and analysis for each question in your presentation. Click on any question to see response data, statistics, and insights.
       </Typography>
 
-      {questions.map((question, index) => (
+      {questions.map((question) => (
         <Box key={question.id}>
           <QuestionCard>
             <QuestionHeader>
