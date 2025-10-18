@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using LiveSentiment.Data;
 using Microsoft.EntityFrameworkCore;
+using LiveSentiment.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace LiveSentiment.Hubs
 {
@@ -111,6 +113,35 @@ namespace LiveSentiment.Hubs
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation($"Response submitted for question {questionId} by session {sessionId}");
+
+                // Trigger NLP analysis in background if enabled
+                _logger.LogInformation($"Starting background NLP analysis for response {responseEntity.Id}");
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        _logger.LogInformation($"Background task started for response {responseEntity.Id}");
+                        
+                        // Create a new scope for the background task to avoid context disposal issues
+                        var serviceProvider = Context.GetHttpContext()?.RequestServices;
+                        if (serviceProvider == null)
+                        {
+                            _logger.LogError("Could not get service provider for background NLP analysis");
+                            return;
+                        }
+                        
+                        using var scope = serviceProvider.CreateScope();
+                        var responseAnalysisService = scope.ServiceProvider.GetRequiredService<ResponseAnalysisService>();
+                        
+                        _logger.LogInformation($"Got ResponseAnalysisService, calling ProcessResponseAsync for {responseEntity.Id}");
+                        await responseAnalysisService.ProcessResponseAsync(responseEntity.Id);
+                        _logger.LogInformation($"ProcessResponseAsync completed for response {responseEntity.Id}");
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, $"Error processing NLP analysis for response {responseEntity.Id}");
+                    }
+                });
 
                 // Notify presenter about new response
                 await Clients.Group($"presenter_{question.PresentationId}")
@@ -405,12 +436,12 @@ namespace LiveSentiment.Hubs
             return Guid.TryParse(presenterIdClaim, out var presenterId) ? presenterId : null;
         }
 
-        private async Task<int> GetAudienceCount(string presentationId)
+        private Task<int> GetAudienceCount(string presentationId)
         {
             // This is a simplified count - in a real implementation, you might want to track this more precisely
             // For now, we'll use the number of connections in the presentation group
             // Note: This is an approximation and may not be 100% accurate
-            return 0; // SignalR doesn't provide a direct way to count group members
+            return Task.FromResult(0); // SignalR doesn't provide a direct way to count group members
         }
 
         public override async Task OnDisconnectedAsync(Exception exception)

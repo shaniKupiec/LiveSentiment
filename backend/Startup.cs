@@ -12,13 +12,41 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using System.IO;
 
 namespace LiveSentiment
 {
     public class Startup
     {
         public IConfiguration Configuration { get; }
-        public Startup(IConfiguration configuration) => Configuration = configuration;
+        public Startup(IConfiguration configuration) 
+        {
+            Configuration = configuration;
+            LoadEnvironmentVariables();
+        }
+
+        private void LoadEnvironmentVariables()
+        {
+            // Load .env file for development if it exists
+            var envPath = Path.Combine(Directory.GetCurrentDirectory(), "..", ".env");
+            if (File.Exists(envPath))
+            {
+                var lines = File.ReadAllLines(envPath);
+                foreach (var line in lines)
+                {
+                    if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#"))
+                        continue;
+
+                    var parts = line.Split('=', 2);
+                    if (parts.Length == 2)
+                    {
+                        var key = parts[0].Trim();
+                        var value = parts[1].Trim();
+                        Environment.SetEnvironmentVariable(key, value);
+                    }
+                }
+            }
+        }
 
         private string BuildConnectionString()
         {
@@ -112,6 +140,16 @@ namespace LiveSentiment
             // Register Question service
             services.AddScoped<IQuestionService, QuestionService>();
 
+            // Register HTTP clients for NLP services
+            services.AddHttpClient<GroqNLPService>();
+            services.AddHttpClient<HuggingFaceNLPService>();
+
+            // Register NLP services
+            services.AddScoped<GroqNLPService>();
+            services.AddScoped<HuggingFaceNLPService>();
+            services.AddScoped<HybridNLPService>();
+            services.AddScoped<ResponseAnalysisService>();
+
             // Configure JWT Authentication
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
@@ -155,6 +193,20 @@ namespace LiveSentiment
             {
                 var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 context.Database.Migrate();
+                
+                // Initialize NLP services to check configuration
+                try
+                {
+                    var groqService = scope.ServiceProvider.GetRequiredService<GroqNLPService>();
+                    var hybridService = scope.ServiceProvider.GetRequiredService<HybridNLPService>();
+                    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Startup>>();
+                    logger.LogInformation("NLP services initialized successfully");
+                }
+                catch (Exception ex)
+                {
+                    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Startup>>();
+                    logger.LogError(ex, "Failed to initialize NLP services");
+                }
             }
 
             if (env.IsDevelopment()) app.UseDeveloperExceptionPage();

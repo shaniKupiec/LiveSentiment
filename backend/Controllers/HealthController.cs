@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LiveSentiment.Data;
 using Microsoft.Extensions.Configuration;
+using LiveSentiment.Services;
+using LiveSentiment.Models;
 
 namespace LiveSentiment.Controllers
 {
@@ -98,5 +100,47 @@ namespace LiveSentiment.Controllers
                 }
             });
         }
+
+        /// <summary>
+        /// Test NLP analysis directly
+        /// </summary>
+        [HttpPost("test-nlp")]
+        public async Task<IActionResult> TestNLP([FromBody] TestNLPRequest request)
+        {
+            try
+            {
+                var hybridService = HttpContext.RequestServices.GetRequiredService<HybridNLPService>();
+                
+                var options = new AnalysisOptions
+                {
+                    EnableSentimentAnalysis = true,
+                    EnableEmotionAnalysis = true,
+                    EnableKeywordExtraction = true
+                };
+
+                var result = await hybridService.AnalyzeResponseAsync(request.Text, options);
+                
+                return Ok(new
+                {
+                    success = true,
+                    text = request.Text,
+                    result = result
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    error = ex.Message,
+                    stackTrace = ex.StackTrace
+                });
+            }
+        }
+    }
+
+    public class TestNLPRequest
+    {
+        public string Text { get; set; } = string.Empty;
     }
 }
