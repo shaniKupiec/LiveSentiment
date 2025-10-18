@@ -27,11 +27,10 @@ namespace LiveSentiment.Services
                      configuration["GROQ_API_KEY"] ?? 
                      Environment.GetEnvironmentVariable("GROQ_API_KEY") ?? "";
             
-            // TEMPORARY: Add your API key directly here for testing
+            // API key should be configured via environment variable or appsettings
             if (string.IsNullOrEmpty(_apiKey))
             {
-                _apiKey = "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"; // TODO: Move to environment variable
-                _logger.LogWarning("Using hardcoded API key for testing - REMOVE THIS IN PRODUCTION!");
+                _logger.LogWarning("Groq API key is not configured. Please set GROQ_API_KEY environment variable or configure in appsettings.");
             }
             
             if (string.IsNullOrEmpty(_apiKey))
