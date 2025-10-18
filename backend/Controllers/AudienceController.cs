@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using LiveSentiment.Data;
 using LiveSentiment.Models;
 using LiveSentiment.Extensions;
+using LiveSentiment.Services;
 using System.Text.Json;
 
 namespace LiveSentiment.Controllers
@@ -173,6 +174,24 @@ namespace LiveSentiment.Controllers
 
                 _logger.LogInformation($"Response submitted for question {questionId} by session {request.SessionId}");
 
+                // Trigger NLP analysis in background if enabled
+                _logger.LogInformation($"Starting background NLP analysis for response {response.Id}");
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        _logger.LogInformation($"Background task started for response {response.Id}");
+                        var responseAnalysisService = HttpContext.RequestServices.GetRequiredService<ResponseAnalysisService>();
+                        _logger.LogInformation($"Got ResponseAnalysisService, calling ProcessResponseAsync for {response.Id}");
+                        await responseAnalysisService.ProcessResponseAsync(response.Id);
+                        _logger.LogInformation($"ProcessResponseAsync completed for response {response.Id}");
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, $"Error processing NLP analysis for response {response.Id}");
+                    }
+                });
+
                 return this.Success(new SubmitResponseResult
                 {
                     Success = true,
@@ -290,6 +309,14 @@ namespace LiveSentiment.Controllers
                         break;
                     case QuestionType.YesNo:
                         stats.YesNoCounts = GetYesNoCounts(question.Responses);
+                        break;
+                    case QuestionType.OpenEnded:
+                    case QuestionType.WordCloud:
+                        // Add NLP analysis if any NLP features are enabled
+                        if (question.EnableSentimentAnalysis || question.EnableEmotionAnalysis || question.EnableKeywordExtraction)
+                        {
+                            stats.NLPAnalysis = GetNLPAnalysisStats(question.Responses);
+                        }
                         break;
                 }
 
@@ -420,6 +447,98 @@ namespace LiveSentiment.Controllers
                 return sorted[count / 2];
             }
         }
+
+        private NLPAnalysisStats GetNLPAnalysisStats(ICollection<Response> responses)
+        {
+            var totalResponses = responses.Count;
+            var analyzedResponses = responses.Count(r => r.AnalysisCompleted && r.AnalysisResults != null);
+
+            var stats = new NLPAnalysisStats
+            {
+                TotalResponses = totalResponses,
+                AnalyzedResponses = analyzedResponses
+            };
+
+            if (analyzedResponses == 0)
+            {
+                return stats;
+            }
+
+            // Calculate sentiment distribution
+            var sentimentCounts = new Dictionary<string, int>();
+            var emotionCounts = new Dictionary<string, int>();
+            var keywordFrequencies = new Dictionary<string, int>();
+            var totalConfidence = 0.0;
+            var confidenceCount = 0;
+
+            foreach (var response in responses.Where(r => r.AnalysisCompleted && r.AnalysisResults != null))
+            {
+                try
+                {
+                    if (response.AnalysisResults?.RootElement != null)
+                    {
+                        var analysisResult = System.Text.Json.JsonSerializer.Deserialize<Models.AnalysisResult>(response.AnalysisResults.RootElement.GetRawText());
+                        
+                        if (analysisResult?.Sentiment != null)
+                        {
+                            var sentiment = analysisResult.Sentiment.Label;
+                            sentimentCounts[sentiment] = sentimentCounts.GetValueOrDefault(sentiment, 0) + 1;
+                            totalConfidence += analysisResult.Sentiment.Confidence;
+                            confidenceCount++;
+                        }
+
+                        if (analysisResult?.Emotion != null)
+                        {
+                            var emotion = analysisResult.Emotion.Label;
+                            emotionCounts[emotion] = emotionCounts.GetValueOrDefault(emotion, 0) + 1;
+                        }
+
+                        if (analysisResult?.Keywords != null)
+                        {
+                            foreach (var keyword in analysisResult.Keywords)
+                            {
+                                keywordFrequencies[keyword.Text] = keywordFrequencies.GetValueOrDefault(keyword.Text, 0) + 1;
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Error parsing analysis results for response {ResponseId}", response.Id);
+                }
+            }
+
+            // Calculate percentages
+            stats.SentimentCounts = sentimentCounts;
+            stats.SentimentPercentages = sentimentCounts.ToDictionary(
+                kvp => kvp.Key,
+                kvp => analyzedResponses > 0 ? (double)kvp.Value / analyzedResponses * 100 : 0
+            );
+
+            stats.EmotionCounts = emotionCounts;
+            stats.EmotionPercentages = emotionCounts.ToDictionary(
+                kvp => kvp.Key,
+                kvp => analyzedResponses > 0 ? (double)kvp.Value / analyzedResponses * 100 : 0
+            );
+
+            // Top keywords
+            stats.TopKeywords = keywordFrequencies
+                .OrderByDescending(kvp => kvp.Value)
+                .Take(10)
+                .Select(kvp => new KeywordFrequency
+                {
+                    Text = kvp.Key,
+                    Count = kvp.Value,
+                    Percentage = analyzedResponses > 0 ? (double)kvp.Value / analyzedResponses * 100 : 0,
+                    AverageRelevance = 0.7 // Placeholder - would need to calculate from individual results
+                })
+                .ToList();
+
+            stats.UniqueKeywords = keywordFrequencies.Count;
+            stats.AverageConfidence = confidenceCount > 0 ? totalConfidence / confidenceCount : 0;
+
+            return stats;
+        }
     }
 
     // Response models for audience API
@@ -472,6 +591,7 @@ namespace LiveSentiment.Controllers
         public Dictionary<string, int>? ChoiceCounts { get; set; }
         public NumericStats? NumericStats { get; set; }
         public YesNoCounts? YesNoCounts { get; set; }
+        public NLPAnalysisStats? NLPAnalysis { get; set; }
     }
 
     public class NumericStats
@@ -487,6 +607,27 @@ namespace LiveSentiment.Controllers
     {
         public int Yes { get; set; }
         public int No { get; set; }
+    }
+
+    public class NLPAnalysisStats
+    {
+        public int TotalResponses { get; set; }
+        public int AnalyzedResponses { get; set; }
+        public Dictionary<string, int> SentimentCounts { get; set; } = new Dictionary<string, int>();
+        public Dictionary<string, double> SentimentPercentages { get; set; } = new Dictionary<string, double>();
+        public Dictionary<string, int> EmotionCounts { get; set; } = new Dictionary<string, int>();
+        public Dictionary<string, double> EmotionPercentages { get; set; } = new Dictionary<string, double>();
+        public List<KeywordFrequency> TopKeywords { get; set; } = new List<KeywordFrequency>();
+        public int UniqueKeywords { get; set; }
+        public double AverageConfidence { get; set; }
+    }
+
+    public class KeywordFrequency
+    {
+        public string Text { get; set; } = string.Empty;
+        public int Count { get; set; }
+        public double Percentage { get; set; }
+        public double AverageRelevance { get; set; }
     }
 
     public class ResponseStatusResult

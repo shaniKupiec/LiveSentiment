@@ -65,6 +65,13 @@ namespace LiveSentiment.Models
         public string? SessionId { get; set; }
         public string Value { get; set; }
         public DateTime Timestamp { get; set; }
+        
+        // NLP Analysis Results
+        public JsonDocument? AnalysisResults { get; set; }
+        public DateTime? AnalysisTimestamp { get; set; }
+        public bool AnalysisCompleted { get; set; } = false;
+        public string? AnalysisProvider { get; set; } // "groq", "huggingface", "hybrid"
+        public string? AnalysisError { get; set; }
     }
 
     // Aggregated results for sentiment, emotion counts, and keyword trends per question
