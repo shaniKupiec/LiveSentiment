@@ -32,6 +32,7 @@ The NLP Analysis feature provides real-time analysis of audience text responses,
 - **Purpose**: Short text responses optimized for keyword extraction
 - **Analysis Types**: All three NLP features available
 - **Use Cases**: "One word to describe this session", "Key takeaways", "Main topics"
+- **Input Format**: Text field with placeholder "Enter words separated by commas"
 
 ## NLP Analysis Features
 
