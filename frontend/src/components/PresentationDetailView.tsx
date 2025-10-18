@@ -29,6 +29,7 @@ import { apiService } from '../services/api';
 import { useSignalR } from '../hooks/useSignalR';
 import { usePresentations } from '../contexts/PresentationContext';
 import { usePresentationOperations, useLiveSessionOperations } from '../hooks/usePresentationOperations';
+import { QuestionsProvider } from '../contexts/QuestionsContext';
 import type { Presentation } from '../types/presentation';
 import type { Question as QuestionType } from '../types/question';
 import QuestionsManagement from './QuestionsManagement';
@@ -61,7 +62,7 @@ const PresentationDetailView: React.FC<PresentationDetailViewProps> = ({
   onBack
 }) => {
   // Use the new context and hooks
-  const { selectedPresentation } = usePresentations();
+  const { selectedPresentation, selectPresentation } = usePresentations();
   const { updatePresentation, deletePresentation } = usePresentationOperations();
   const { startLiveSession, loading: liveSessionLoading } = useLiveSessionOperations();
   
@@ -219,6 +220,17 @@ const PresentationDetailView: React.FC<PresentationDetailViewProps> = ({
     } else {
       // Fallback to reloading from API for other operations
       loadQuestions();
+    }
+  };
+
+  const handleLiveSessionEnd = async () => {
+    // Fetch the updated selected presentation from the backend
+    try {
+      const updatedPresentation = await apiService.getPresentation(presentation.id);
+      selectPresentation(updatedPresentation);
+    } catch (error) {
+      console.error('Failed to fetch updated presentation:', error);
+      setError('Failed to refresh presentation data');
     }
   };
 
@@ -439,11 +451,13 @@ const PresentationDetailView: React.FC<PresentationDetailViewProps> = ({
                   </Paper>
                   
                   {/* Live Presentation Manager */}
-                  <LivePresentationManager 
-                    presentationId={presentation.id}
-                    presentationName={presentation.title}
-                    questions={questions}
-                  />
+                  <QuestionsProvider>
+                    <LivePresentationManager 
+                      presentationId={presentation.id}
+                      presentationName={presentation.title}
+                      onLiveSessionEnd={handleLiveSessionEnd}
+                    />
+                  </QuestionsProvider>
                 </Box>
               )}
             </Box>

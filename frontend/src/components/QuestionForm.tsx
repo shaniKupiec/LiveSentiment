@@ -23,10 +23,29 @@ import {
   ListItem,
   ListItemSecondaryAction,
   Chip,
+  Tooltip,
+  Alert,
+  Divider,
 } from '@mui/material';
-import { ExpandMore, Add, Delete } from '@mui/icons-material';
+import { 
+  ExpandMore, 
+  Add, 
+  Delete, 
+  HelpOutline, 
+  Psychology, 
+  SentimentSatisfied, 
+  EmojiEmotions, 
+  Key, 
+  CloudQueue,
+  TextFields,
+  RadioButtonChecked,
+  CheckBox,
+  LinearScale,
+  QuestionAnswer
+} from '@mui/icons-material';
 import type { Question, QuestionFormData, QuestionType, MultipleChoiceConfig, NumericRatingConfig } from '../types/question';
 import { QuestionType as QuestionTypeValues } from '../types/question';
+import { getQuestionTypeOptions } from '../utils/questionTypeUtils';
 
 interface QuestionFormProps {
   open: boolean;
@@ -312,6 +331,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
             })}
             size="small"
             placeholder="e.g., Poor"
+            helperText="Label for the minimum value (e.g., 'Not interested', 'Very dissatisfied')"
           />
           <TextField
             label="Max Label"
@@ -322,6 +342,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
             })}
             size="small"
             placeholder="e.g., Excellent"
+            helperText="Label for the maximum value (e.g., 'Very interested', 'Extremely satisfied')"
           />
         </Box>
       </Box>
@@ -330,6 +351,54 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
 
 
   const canEnableTextAnalysis = formData.type === QuestionTypeValues.OpenEnded || formData.type === QuestionTypeValues.WordCloud;
+
+  // Helper function to get question type description and icon
+  const getQuestionTypeInfo = (type: number) => {
+    switch (type) {
+      case QuestionTypeValues.MultipleChoiceSingle:
+        return {
+          icon: <RadioButtonChecked color="primary" />,
+          description: "Single choice from multiple options. Perfect for surveys and polls.",
+          example: "What is your favorite programming language?"
+        };
+      case QuestionTypeValues.MultipleChoiceMultiple:
+        return {
+          icon: <CheckBox color="primary" />,
+          description: "Multiple selections allowed. Great for gathering preferences.",
+          example: "Which technologies do you use? (Select all that apply)"
+        };
+      case QuestionTypeValues.YesNo:
+        return {
+          icon: <QuestionAnswer color="primary" />,
+          description: "Simple yes/no or true/false questions. Quick binary decisions.",
+          example: "Do you have experience with React?"
+        };
+      case QuestionTypeValues.NumericRating:
+        return {
+          icon: <LinearScale color="primary" />,
+          description: "Rating scale with min/max values. Ideal for satisfaction surveys.",
+          example: "Rate your experience from 1-10"
+        };
+      case QuestionTypeValues.OpenEnded:
+        return {
+          icon: <TextFields color="primary" />,
+          description: "Free-form text responses. Perfect for detailed feedback and comments.",
+          example: "What suggestions do you have for improvement?"
+        };
+      case QuestionTypeValues.WordCloud:
+        return {
+          icon: <CloudQueue color="primary" />,
+          description: "Short text responses for keyword extraction. Creates visual word clouds.",
+          example: "Enter words separated by commas: innovation, teamwork, growth"
+        };
+      default:
+        return {
+          icon: <QuestionAnswer color="primary" />,
+          description: "Select a question type to see details.",
+          example: ""
+        };
+    }
+  };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -360,17 +429,44 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
               onChange={(e) => handleTypeChange(e.target.value as QuestionType)}
               label="Question Type"
             >
-              <MenuItem value={QuestionTypeValues.MultipleChoiceSingle}>Single Choice</MenuItem>
-              <MenuItem value={QuestionTypeValues.MultipleChoiceMultiple}>Multiple Choice</MenuItem>
-              <MenuItem value={QuestionTypeValues.NumericRating}>Numeric Rating</MenuItem>
-              <MenuItem value={QuestionTypeValues.YesNo}>Yes/No</MenuItem>
-              <MenuItem value={QuestionTypeValues.OpenEnded}>Open Ended</MenuItem>
-              <MenuItem value={QuestionTypeValues.WordCloud}>Word Cloud</MenuItem>
+              {getQuestionTypeOptions().map(({ value, label }) => (
+                <MenuItem key={value} value={value}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                    {getQuestionTypeInfo(value).icon}
+                    <Box>
+                      <Typography variant="body1">{label}</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {getQuestionTypeInfo(value).description}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
 
+          {/* Question Type Information */}
+          <Alert severity="info" sx={{ mt: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              {getQuestionTypeInfo(formData.type).icon}
+              <Typography variant="subtitle2">
+                {getQuestionTypeOptions().find(opt => opt.value === formData.type)?.label}
+              </Typography>
+            </Box>
+            <Typography variant="body2" sx={{ mb: 1 }}>
+              {getQuestionTypeInfo(formData.type).description}
+            </Typography>
+            {getQuestionTypeInfo(formData.type).example && (
+              <Typography variant="body2" color="text.secondary">
+                <strong>Example:</strong> {getQuestionTypeInfo(formData.type).example}
+              </Typography>
+            )}
+          </Alert>
+
           {/* Type-specific Configuration */}
-          {formData.type !== QuestionTypeValues.YesNo && (
+          {formData.type !== QuestionTypeValues.YesNo && 
+           formData.type !== QuestionTypeValues.OpenEnded && 
+           formData.type !== QuestionTypeValues.WordCloud && (
             <Accordion defaultExpanded>
               <AccordionSummary expandIcon={<ExpandMore />}>
                 <Typography variant="subtitle1">Question Configuration</Typography>
@@ -386,43 +482,106 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
             </Accordion>
           )}
 
-                    {/* NLP Configuration */}
+          {/* NLP Configuration */}
           {canEnableTextAnalysis && (
             <Accordion>
               <AccordionSummary expandIcon={<ExpandMore />}>
-                <Typography variant="subtitle1">Text Analysis Options</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Psychology color="primary" />
+                  <Typography variant="subtitle1">Text Analysis Options</Typography>
+                  <Tooltip title="AI-powered analysis of text responses to extract insights">
+                    <HelpOutline fontSize="small" color="action" />
+                  </Tooltip>
+                </Box>
               </AccordionSummary>
               <AccordionDetails>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={formData.enableSentimentAnalysis}
-                        onChange={(e) => handleFieldChange('enableSentimentAnalysis', e.target.checked)}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  {/* Sentiment Analysis */}
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 200 }}>
+                      <SentimentSatisfied color="primary" />
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={formData.enableSentimentAnalysis}
+                            onChange={(e) => handleFieldChange('enableSentimentAnalysis', e.target.checked)}
+                          />
+                        }
+                        label="Sentiment Analysis"
                       />
-                    }
-                    label="Sentiment Analysis (Positive/Negative/Neutral)"
-                  />
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Analyzes whether responses are positive, negative, or neutral
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Example: "Great session!" → Positive (0.9 confidence)
+                      </Typography>
+                    </Box>
+                  </Box>
 
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={formData.enableEmotionAnalysis}
-                        onChange={(e) => handleFieldChange('enableEmotionAnalysis', e.target.checked)}
-                      />
-                    }
-                    label="Emotion Detection (Joy, Sadness, Anger, etc.)"
-                  />
+                  <Divider />
 
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={formData.enableKeywordExtraction}
-                        onChange={(e) => handleFieldChange('enableKeywordExtraction', e.target.checked)}
+                  {/* Emotion Detection */}
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 200 }}>
+                      <EmojiEmotions color="primary" />
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={formData.enableEmotionAnalysis}
+                            onChange={(e) => handleFieldChange('enableEmotionAnalysis', e.target.checked)}
+                          />
+                        }
+                        label="Emotion Detection"
                       />
-                    }
-                    label="Keyword Extraction"
-                  />
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Detects emotions: Joy, Sadness, Anger, Fear, Surprise, Disgust, Neutral
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Example: "I'm excited about this!" → Joy (0.85 confidence)
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  <Divider />
+
+                  {/* Keyword Extraction */}
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 200 }}>
+                      <Key color="primary" />
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={formData.enableKeywordExtraction}
+                            onChange={(e) => handleFieldChange('enableKeywordExtraction', e.target.checked)}
+                          />
+                        }
+                        label="Keyword Extraction"
+                      />
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Extracts important words and phrases, creates word clouds
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Example: "I learned about React and JavaScript" → ["React", "JavaScript", "learned"]
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {/* Word Cloud specific guidance */}
+                  {formData.type === QuestionTypeValues.WordCloud && (
+                    <Alert severity="info" sx={{ mt: 2 }}>
+                      <Typography variant="body2">
+                        <strong>💡 Word Cloud Tip:</strong> Encourage participants to enter words separated by commas for better keyword extraction.
+                        <br />
+                        <strong>Example:</strong> "innovation, teamwork, growth, challenges, success"
+                      </Typography>
+                    </Alert>
+                  )}
                 </Box>
               </AccordionDetails>
             </Accordion>
