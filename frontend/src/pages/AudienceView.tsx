@@ -24,8 +24,7 @@ import {
   Language, 
   CloudQueue, 
   TextFields, 
-  Info,
-  Lightbulb
+  Info
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import { useParams } from "react-router-dom";
