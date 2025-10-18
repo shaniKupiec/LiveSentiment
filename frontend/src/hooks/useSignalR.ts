@@ -13,7 +13,8 @@ import type {
   ErrorEvent,
   ResponseReceivedEvent,
   AudienceCountUpdatedEvent,
-  JoinedPresenterSessionEvent
+  JoinedPresenterSessionEvent,
+  NLPAnalysisCompletedEvent
 } from '../types/signalr';
 import { 
   ConnectionState
@@ -56,6 +57,7 @@ export interface UseSignalRReturn {
   onResponseReceived: (handler: SignalREventHandler<ResponseReceivedEvent>) => void;
   onAudienceCountUpdated: (handler: SignalREventHandler<AudienceCountUpdatedEvent>) => void;
   onJoinedPresenterSession: (handler: SignalREventHandler<JoinedPresenterSessionEvent>) => void;
+  onNLPAnalysisCompleted: (handler: SignalREventHandler<NLPAnalysisCompletedEvent>) => void;
   onError: (handler: SignalREventHandler<ErrorEvent>) => void;
   
   // Cleanup
@@ -217,6 +219,12 @@ export const useSignalR = (options: UseSignalROptions = {}): UseSignalRReturn =>
     signalRService.on(key, handler);
   }, []);
 
+  const onNLPAnalysisCompleted = useCallback((handler: SignalREventHandler<NLPAnalysisCompletedEvent>) => {
+    const key = 'NLPAnalysisCompleted';
+    handlersRef.current.set(key, handler);
+    signalRService.on(key, handler);
+  }, []);
+
   const onError = useCallback((handler: SignalREventHandler<ErrorEvent>) => {
     const key = 'Error';
     handlersRef.current.set(key, handler);
@@ -261,6 +269,7 @@ export const useSignalR = (options: UseSignalROptions = {}): UseSignalRReturn =>
     onResponseReceived,
     onAudienceCountUpdated,
     onJoinedPresenterSession,
+    onNLPAnalysisCompleted,
     onError,
     cleanup
   };

@@ -67,6 +67,13 @@ export interface JoinedPresenterSessionEvent {
   presentationId: string;
 }
 
+export interface NLPAnalysisCompletedEvent {
+  questionId: string;
+  responseId: string;
+  analysisResults: any;
+  analysisTimestamp: string;
+}
+
 // SignalR method names
 export const SignalRMethods = {
   // Audience methods
@@ -97,7 +104,8 @@ export const SignalREvents = {
   // Presenter events
   ResponseReceived: 'ResponseReceived',
   AudienceCountUpdated: 'AudienceCountUpdated',
-  JoinedPresenterSession: 'JoinedPresenterSession'
+  JoinedPresenterSession: 'JoinedPresenterSession',
+  NLPAnalysisCompleted: 'NLPAnalysisCompleted'
 } as const;
 
 // Connection configuration

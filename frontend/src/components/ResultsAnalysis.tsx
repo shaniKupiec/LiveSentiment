@@ -11,6 +11,7 @@ import { styled } from '@mui/material/styles';
 import type { Question } from '../types/question';
 import { QuestionType } from '../types/question';
 import QuestionResponseAccordion from './QuestionResponseAccordion';
+import { getQuestionTypeName } from '../utils/questionTypeUtils';
 
 const QuestionCard = styled(Paper)(({ theme }) => ({
   marginBottom: theme.spacing(2),
@@ -54,16 +55,8 @@ const ResultsAnalysis: React.FC<ResultsAnalysisProps> = ({
     setExpandedAccordion(expandedAccordion === questionId ? null : questionId);
   };
 
-  const getQuestionTypeName = (type: number): string => {
-    switch (type) {
-      case QuestionType.MultipleChoiceSingle: return 'Single Choice';
-      case QuestionType.MultipleChoiceMultiple: return 'Multiple Choice';
-      case QuestionType.NumericRating: return 'Numeric Rating';
-      case QuestionType.YesNo: return 'Yes/No';
-      case QuestionType.OpenEnded: return 'Open Ended';
-      case QuestionType.WordCloud: return 'Word Cloud';
-      default: return 'Unknown';
-    }
+  const getQuestionTypeNameLocal = (type: number): string => {
+    return getQuestionTypeName(type as QuestionType);
   };
 
   const getQuestionTypeColor = (type: number): "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning" => {
@@ -119,7 +112,7 @@ const ResultsAnalysis: React.FC<ResultsAnalysisProps> = ({
             
             <QuestionInfo>
               <Chip
-                label={getQuestionTypeName(question.type)}
+                label={getQuestionTypeNameLocal(question.type)}
                 size="small"
                 color={getQuestionTypeColor(question.type)}
                 variant="outlined"
