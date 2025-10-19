@@ -93,7 +93,6 @@ export const useQuestionResults = ({
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const isInitialLoadRef = useRef(true);
 
   // Get SignalR connection for real-time updates
   const { isConnected, onResponseReceived, onNLPAnalysisCompleted } = useSignalR({ autoConnect: false });
