@@ -298,10 +298,9 @@ const ResponsesTable: React.FC<ResponsesTableProps> = ({
       <TableRow key={response.id} hover>
         <TableCell>
           <Box sx={{ 
-            maxWidth: 200, 
-            overflow: 'hidden', 
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap'
+            maxWidth: 300, 
+            wordWrap: 'break-word',
+            whiteSpace: 'pre-wrap'
           }}>
             {response.value}
           </Box>
