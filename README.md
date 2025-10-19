@@ -47,14 +47,8 @@ LiveSentiment is a comprehensive platform that enables presenters to conduct liv
 
 ## 📸 Screenshots & Demo
 
-### Screenshots
-<!-- Add your screenshots here -->
-![Screenshot 1](path/to/screenshot1.png)
-![Screenshot 2](path/to/screenshot2.png)
-
 ### Video Demo
-<!-- Add your YouTube video link here -->
-🎥 **Watch the demo:** [YouTube Video Link](https://youtube.com/watch?v=your-video-id)
+🎥 **Watch the demo:** [LiveSentiment Demo](https://www.youtube.com/watch?v=PnK20U6BIs4)
 
 ## 🛠️ Local Development
 
