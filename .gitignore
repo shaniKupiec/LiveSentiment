@@ -403,6 +403,13 @@ dist-ssr
 .env.test.local
 .env.production.local
 
+# API Keys and Secrets
+*api-key*
+*secret*
+*credentials*
+appsettings.Production.json
+appsettings.Staging.json
+
 # Database
 *.db
 *.sqlite
