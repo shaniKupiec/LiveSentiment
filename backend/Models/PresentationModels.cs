@@ -32,6 +32,7 @@ namespace LiveSentiment.Models
         public bool IsLive { get; set; }
         public DateTime? LiveStartedAt { get; set; }
         public DateTime? LiveEndedAt { get; set; }
+        public int QuestionCount { get; set; }
     }
 
     public class LabelInfo
@@ -57,10 +58,10 @@ namespace LiveSentiment.Models
     {
         [Required]
         [MaxLength(100)]
-        public string Name { get; set; }
+        public required string Name { get; set; }
         
         [MaxLength(7)]
-        public string Color { get; set; }
+        public required string Color { get; set; }
         
         public bool IsActive { get; set; }
     }
@@ -68,8 +69,8 @@ namespace LiveSentiment.Models
     public class LabelResponse
     {
         public Guid Id { get; set; }
-        public string Name { get; set; }
-        public string Color { get; set; }
+        public required string Name { get; set; }
+        public required string Color { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime LastUpdated { get; set; }
         public bool IsActive { get; set; }
@@ -84,7 +85,7 @@ namespace LiveSentiment.Models
     public class PresentationSummary
     {
         public Guid Id { get; set; }
-        public string Title { get; set; }
+        public required string Title { get; set; }
         public DateTime CreatedDate { get; set; }
     }
 

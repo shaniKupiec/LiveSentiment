@@ -16,14 +16,12 @@ import {
   DialogContent,
   DialogActions,
   DialogContentText,
-  keyframes
 } from '@mui/material';
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   PlayArrow as StartIcon,
   Share as ShareIcon,
-  RadioButtonUnchecked as LiveIcon,
   QrCode as QrCodeIcon
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
@@ -31,27 +29,17 @@ import { apiService } from '../services/api';
 import { useSignalR } from '../hooks/useSignalR';
 import { usePresentations } from '../contexts/PresentationContext';
 import { usePresentationOperations, useLiveSessionOperations } from '../hooks/usePresentationOperations';
+import { QuestionsProvider } from '../contexts/QuestionsContext';
 import type { Presentation } from '../types/presentation';
 import type { Question as QuestionType } from '../types/question';
-import { QuestionType as QuestionTypeEnum } from '../types/question';
 import QuestionsManagement from './QuestionsManagement';
 import PresentationForm from './PresentationForm';
 import DeleteConfirmationDialog from './DeleteConfirmationDialog';
+import LivePresentationManager from './LivePresentationManager';
+import ResultsAnalysis from './ResultsAnalysis';
 import { formatDate } from '../utils/dateUtils';
 import QRCode from 'qrcode';
 
-// Pulse animation for live status
-const pulse = keyframes`
-  0% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
-  100% {
-    opacity: 1;
-  }
-`;
 
 const LiveIndicator = styled(Chip)(({ theme }) => ({
   backgroundColor: theme.palette.success.main,
@@ -59,25 +47,6 @@ const LiveIndicator = styled(Chip)(({ theme }) => ({
   fontWeight: 'bold',
 }));
 
-// Helper function to get question type label
-const getQuestionTypeLabel = (type: number): string => {
-  switch (type) {
-    case QuestionTypeEnum.MultipleChoiceSingle:
-      return 'Multiple Choice (Single)';
-    case QuestionTypeEnum.MultipleChoiceMultiple:
-      return 'Multiple Choice (Multiple)';
-    case QuestionTypeEnum.NumericRating:
-      return 'Numeric Rating';
-    case QuestionTypeEnum.YesNo:
-      return 'Yes/No';
-    case QuestionTypeEnum.OpenEnded:
-      return 'Open-ended Text';
-    case QuestionTypeEnum.WordCloud:
-      return 'Word Cloud';
-    default:
-      return 'Unknown Type';
-  }
-};
 
 interface PresentationDetailViewProps {
   presentation: Presentation;
@@ -93,9 +62,9 @@ const PresentationDetailView: React.FC<PresentationDetailViewProps> = ({
   onBack
 }) => {
   // Use the new context and hooks
-  const { selectedPresentation } = usePresentations();
+  const { selectedPresentation, selectPresentation } = usePresentations();
   const { updatePresentation, deletePresentation } = usePresentationOperations();
-  const { startLiveSession, stopLiveSession, activateQuestion, loading: liveSessionLoading } = useLiveSessionOperations();
+  const { startLiveSession, loading: liveSessionLoading } = useLiveSessionOperations();
   
   // Use selected presentation from context or fallback to initial
   const presentation = selectedPresentation || initialPresentation;
@@ -127,9 +96,6 @@ const PresentationDetailView: React.FC<PresentationDetailViewProps> = ({
     connect,
     joinPresenterSession,
     startLiveSession: signalRStartLiveSession,
-    endLiveSession: signalREndLiveSession,
-    activateQuestion: signalRActivateQuestion,
-    deactivateQuestion: signalRDeactivateQuestion
   } = useSignalR({ autoConnect: false });
 
   // Presentation state is now managed by the context
@@ -193,77 +159,29 @@ const PresentationDetailView: React.FC<PresentationDetailViewProps> = ({
     }
   };
 
-  const handleActivateQuestion = async (questionId: string) => {
-    try {
-      const question = questions.find(q => q.id === questionId);
-      if (!question) return;
-      
-      const isCurrentlyLive = question.isLive;
-      
-      // Update local state optimistically
-      setQuestions(prevQuestions => 
-        prevQuestions.map(q => ({
-          ...q,
-          isLive: q.id === questionId ? !isCurrentlyLive : false, // Toggle current question, deactivate others
-          liveStartedAt: q.id === questionId && !isCurrentlyLive ? new Date().toISOString() : undefined,
-          liveEndedAt: q.id === questionId && isCurrentlyLive ? new Date().toISOString() : q.liveEndedAt
-        }))
-      );
-      
-      if (isCurrentlyLive) {
-        // Deactivate question via API
-        await apiService.deactivateQuestion(presentation.id, questionId);
-        
-        // Deactivate question via SignalR
-        await signalRDeactivateQuestion(questionId);
-        console.log('✅ Question deactivated successfully');
-      } else {
-        // Activate question via API
-        await activateQuestion(presentation.id, questionId);
-        
-        // Activate question via SignalR
-        await signalRActivateQuestion(questionId);
-        console.log('✅ Question activated successfully');
-      }
-      
-    } catch (error) {
-      console.error('Failed to toggle question status:', error);
-      setError('Failed to toggle question status');
-      
-      // Rollback optimistic update on error
-      setQuestions(prevQuestions => 
-        prevQuestions.map(q => ({
-          ...q,
-          isLive: false,
-          liveStartedAt: undefined,
-          liveEndedAt: undefined
-        }))
-      );
-    }
-  };
 
-  const handleStopLiveSession = async () => {
-    try {
-      // Update local state optimistically - deactivate all questions
-      setQuestions(prevQuestions => 
-        prevQuestions.map(q => ({
-          ...q,
-          isLive: false,
-          liveEndedAt: new Date().toISOString()
-        }))
-      );
-      
-      // Stop live session via API (with optimistic updates)
-      await stopLiveSession(presentation.id);
-      
-      // Stop live session via SignalR
-      await signalREndLiveSession(presentation.id);
-      
-    } catch (error) {
-      console.error('Failed to stop live session:', error);
-      setError('Failed to stop live session');
-    }
-  };
+  // const handleStopLiveSession = async () => {
+  //   try {
+  //     // Update local state optimistically - deactivate all questions
+  //     setQuestions(prevQuestions => 
+  //       prevQuestions.map(q => ({
+  //         ...q,
+  //         isLive: false,
+  //         liveEndedAt: new Date().toISOString()
+  //       }))
+  //     );
+  //     
+  //     // Stop live session via API (with optimistic updates)
+  //     await stopLiveSession(presentation.id);
+  //     
+  //     // Stop live session via SignalR
+  //     await signalREndLiveSession(presentation.id);
+  //     
+  //   } catch (error) {
+  //     console.error('Failed to stop live session:', error);
+  //     setError('Failed to stop live session');
+  //   }
+  // };
 
   const handleUpdatePresentation = async (formData: any) => {
     try {
@@ -295,8 +213,25 @@ const PresentationDetailView: React.FC<PresentationDetailViewProps> = ({
     }
   };
 
-  const handleQuestionsChange = () => {
-    loadQuestions();
+  const handleQuestionsChange = (updatedQuestions?: QuestionType[]) => {
+    if (updatedQuestions) {
+      // Use the updated questions directly for immediate UI feedback
+      setQuestions(updatedQuestions);
+    } else {
+      // Fallback to reloading from API for other operations
+      loadQuestions();
+    }
+  };
+
+  const handleLiveSessionEnd = async () => {
+    // Fetch the updated selected presentation from the backend
+    try {
+      const updatedPresentation = await apiService.getPresentation(presentation.id);
+      selectPresentation(updatedPresentation);
+    } catch (error) {
+      console.error('Failed to fetch updated presentation:', error);
+      setError('Failed to refresh presentation data');
+    }
   };
 
   const generateQRCode = async () => {
@@ -405,6 +340,7 @@ const PresentationDetailView: React.FC<PresentationDetailViewProps> = ({
         <Tabs value={activeTab} onChange={handleTabChange} sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tab label="Questions Management" />
           <Tab label="Live Session" />
+          <Tab label="Results & Analysis" />
         </Tabs>
         
         <Box sx={{ p: 3 }}>
@@ -482,16 +418,6 @@ const PresentationDetailView: React.FC<PresentationDetailViewProps> = ({
                     <Typography variant="body2" color="text.secondary">
                       Your presentation is now live! Share the link below with your audience, then activate questions to collect responses.
                     </Typography>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      size="small"
-                      onClick={handleStopLiveSession}
-                      disabled={liveSessionLoading}
-                      sx={{ ml: 2 }}
-                    >
-                      {liveSessionLoading ? 'Stopping...' : 'Stop Live Session'}
-                    </Button>
                   </Box>
                   
                   {/* Share Link Section */}
@@ -524,67 +450,27 @@ const PresentationDetailView: React.FC<PresentationDetailViewProps> = ({
                      </Box>
                   </Paper>
                   
-                  {/* Questions List with Live Buttons */}
-                  <Typography variant="h6" gutterBottom>
-                    🎯 Questions
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" paragraph>
-                    Click "Go Live" on any question to start collecting responses from your audience.
-                  </Typography>
-                  
-                  {questions.length === 0 ? (
-                    <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                      No questions available. Add questions in the Questions Management tab.
-                    </Typography>
-                  ) : (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      {questions.map((question, index) => (
-                        <Paper key={question.id} sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <Box sx={{ flexGrow: 1 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                              <Typography variant="body1" fontWeight="medium">
-                                {index + 1}. {question.text}
-                              </Typography>
-                              {question.isLive && (
-                                <Chip
-                                  label="LIVE"
-                                  size="small"
-                                  sx={{
-                                    backgroundColor: '#4CAF50',
-                                    color: 'white',
-                                    fontWeight: 'bold',
-                                    animation: `${pulse} 2s infinite`
-                                  }}
-                                />
-                              )}
-                            </Box>
-                            <Typography variant="caption" color="text.secondary">
-                              {getQuestionTypeLabel(question.type)}
-                            </Typography>
-                          </Box>
-                          <Button
-                            variant={question.isLive ? "outlined" : "contained"}
-                            size="small"
-                            startIcon={<LiveIcon />}
-                            onClick={() => handleActivateQuestion(question.id)}
-                            disabled={liveSessionLoading}
-                            sx={{
-                              backgroundColor: question.isLive ? 'transparent' : '#4CAF50',
-                              color: question.isLive ? '#4CAF50' : 'white',
-                              borderColor: '#4CAF50',
-                              '&:hover': {
-                                backgroundColor: question.isLive ? '#f5f5f5' : '#45a049',
-                              }
-                            }}
-                          >
-                            {liveSessionLoading ? 'Activating...' : question.isLive ? 'Finish Live' : 'Go Live'}
-                          </Button>
-                        </Paper>
-                      ))}
-                    </Box>
-                  )}
+                  {/* Live Presentation Manager */}
+                  <QuestionsProvider>
+                    <LivePresentationManager 
+                      presentationId={presentation.id}
+                      presentationName={presentation.title}
+                      onLiveSessionEnd={handleLiveSessionEnd}
+                    />
+                  </QuestionsProvider>
                 </Box>
               )}
+            </Box>
+          )}
+          
+          {activeTab === 2 && (
+            <Box>
+              <ResultsAnalysis
+                presentationId={presentation.id}
+                presentationName={presentation.title}
+                questions={questions}
+                isLoading={questionsLoading}
+              />
             </Box>
           )}
         </Box>

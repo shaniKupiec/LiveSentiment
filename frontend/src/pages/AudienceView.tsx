@@ -15,8 +15,17 @@ import {
   FormControlLabel,
   Radio,
   Checkbox,
-  Slider
+  Slider,
+  Divider,
+  Card,
+  CardContent
 } from "@mui/material";
+import { 
+  Language, 
+  CloudQueue, 
+  TextFields, 
+  Info
+} from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import { useParams } from "react-router-dom";
 import { useSignalR } from "../hooks/useSignalR";
@@ -239,6 +248,84 @@ const AudienceView: React.FC = () => {
     return <Chip label="Disconnected" color="error" size="small" />;
   };
 
+  // Helper function to render question-specific instructions
+  const renderQuestionInstructions = (type: number) => {
+    switch (type) {
+      case QuestionType.OpenEnded:
+        return (
+          <Card sx={{ mb: 2, backgroundColor: '#f8f9fa' }}>
+            <CardContent sx={{ py: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <TextFields color="primary" fontSize="small" />
+                <Typography variant="subtitle2" color="primary">
+                  Open-Ended Response
+                </Typography>
+              </Box>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                <strong>💡 Tips for better responses:</strong>
+              </Typography>
+              <Box component="ul" sx={{ pl: 2, m: 0 }}>
+                <Typography component="li" variant="body2" color="text.secondary">
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Language fontSize="small" color="action" />
+                    Write in English for best analysis results
+                  </Box>
+                </Typography>
+                <Typography component="li" variant="body2" color="text.secondary">
+                  Be specific and detailed in your response
+                </Typography>
+                <Typography component="li" variant="body2" color="text.secondary">
+                  Share your honest thoughts and experiences
+                </Typography>
+              </Box>
+            </CardContent>
+          </Card>
+        );
+
+      case QuestionType.WordCloud:
+        return (
+          <Card sx={{ mb: 2, backgroundColor: '#e3f2fd' }}>
+            <CardContent sx={{ py: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <CloudQueue color="primary" fontSize="small" />
+                <Typography variant="subtitle2" color="primary">
+                  Word Cloud Response
+                </Typography>
+              </Box>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                <strong>💡 How to participate:</strong>
+              </Typography>
+              <Box component="ul" sx={{ pl: 2, m: 0 }}>
+                <Typography component="li" variant="body2" color="text.secondary">
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Language fontSize="small" color="action" />
+                    Use English words for better keyword extraction
+                  </Box>
+                </Typography>
+                <Typography component="li" variant="body2" color="text.secondary">
+                  Separate words with commas: "innovation, teamwork, growth"
+                </Typography>
+                <Typography component="li" variant="body2" color="text.secondary">
+                  Use single words or short phrases (2-3 words max)
+                </Typography>
+                <Typography component="li" variant="body2" color="text.secondary">
+                  Think of key concepts, feelings, or topics
+                </Typography>
+              </Box>
+              <Alert severity="info" sx={{ mt: 1, py: 1 }}>
+                <Typography variant="body2">
+                  <strong>Example:</strong> "excited, learning, challenges, success, collaboration"
+                </Typography>
+              </Alert>
+            </CardContent>
+          </Card>
+        );
+
+      default:
+        return null;
+    }
+  };
+
   const renderQuestionForm = () => {
     if (!activeQuestion) return null;
 
@@ -312,10 +399,16 @@ const AudienceView: React.FC = () => {
           <TextField
             fullWidth
             multiline
-            minRows={3}
+            minRows={4}
             value={response}
             onChange={e => setResponse(e.target.value)}
-            placeholder="Type your answer..."
+            placeholder="Type your detailed answer here..."
+            helperText="💡 Write in English for best analysis results. Be specific and share your honest thoughts."
+            sx={{
+              '& .MuiInputBase-root': {
+                backgroundColor: '#fafafa'
+              }
+            }}
           />
         );
 
@@ -325,7 +418,13 @@ const AudienceView: React.FC = () => {
             fullWidth
             value={response}
             onChange={e => setResponse(e.target.value)}
-            placeholder="Enter words separated by commas"
+            placeholder="innovation, teamwork, growth, challenges, success"
+            helperText="💡 Use English words separated by commas. Think of key concepts or feelings."
+            sx={{
+              '& .MuiInputBase-root': {
+                backgroundColor: '#f0f8ff'
+              }
+            }}
           />
         );
 
@@ -402,13 +501,18 @@ const AudienceView: React.FC = () => {
       return (
         <StyledPaper>
           {/* Question text */}
-          <Typography variant="body1" gutterBottom>
+          <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
             {activeQuestion.text}
           </Typography>
+          
+          {/* Question-specific instructions */}
+          {renderQuestionInstructions(activeQuestion.type)}
+          
           {/* Render input for current question */}
           <Box sx={{ my: 2 }}>
             {renderQuestionForm()}
           </Box>
+          
           {/* Submit button */}
           <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
             <Button
@@ -426,10 +530,57 @@ const AudienceView: React.FC = () => {
 
     if (state === 'connected' || state === 'waiting') {
       return (
-        <Alert severity="info" sx={{ mt: 2 }}>
-          <Typography variant="h6">Waiting for Questions</Typography>
-          <Typography>Please wait for the presenter to send a question.</Typography>
-        </Alert>
+        <Box>
+          <Alert severity="info" sx={{ mt: 2, mb: 3 }}>
+            <Typography variant="h6">Waiting for Questions</Typography>
+            <Typography>Please wait for the presenter to send a question.</Typography>
+          </Alert>
+          
+          {/* General instructions for audience */}
+          <Card sx={{ backgroundColor: '#f5f5f5' }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <Info color="primary" />
+                <Typography variant="h6" color="primary">
+                  How to Participate
+                </Typography>
+              </Box>
+              
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Box>
+                  <Typography variant="subtitle2" gutterBottom>
+                    📝 Text Responses (Open-ended & Word Cloud)
+                  </Typography>
+                  <Box component="ul" sx={{ pl: 2, m: 0 }}>
+                    <Typography component="li" variant="body2" color="text.secondary">
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Language fontSize="small" color="action" />
+                        Write in English for best analysis results
+                      </Box>
+                    </Typography>
+                    <Typography component="li" variant="body2" color="text.secondary">
+                      Be honest and specific in your responses
+                    </Typography>
+                    <Typography component="li" variant="body2" color="text.secondary">
+                      For word clouds: use commas to separate words
+                    </Typography>
+                  </Box>
+                </Box>
+                
+                <Divider />
+                
+                <Box>
+                  <Typography variant="subtitle2" gutterBottom>
+                    🎯 Other Question Types
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Multiple choice, yes/no, and rating questions are straightforward - just select your answer and submit!
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Box>
       );
     }
 

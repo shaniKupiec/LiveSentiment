@@ -8,54 +8,58 @@ import {
   Chip,
   Alert,
   CircularProgress,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions,
-  Paper,
-  Divider
+  DialogActions
 } from "@mui/material";
 import {
   PlayArrow,
   Stop,
-  Send,
   People,
-  QuestionAnswer,
-  Cancel
+  QuestionAnswer
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import { useSignalR } from "../hooks/useSignalR";
+import { useMultipleQuestionResults } from "../hooks/useQuestionResults";
+import { useQuestions } from "../contexts/QuestionsContext";
+import QuestionItem from "./QuestionItem";
+
 import { apiService } from "../services/api";
-import type { Question } from "../types/question";
-import { QuestionType } from "../types/question";
 import type { ResponseReceivedEvent, AudienceCountUpdatedEvent } from "../types/signalr";
 
-const LiveCard = styled(Card)(({ theme }) => ({
-  backgroundColor: theme.palette.success.light,
-  color: theme.palette.success.contrastText,
+const CombinedStatusCard = styled(Card)(({ theme }) => ({
   marginBottom: theme.spacing(2),
+  border: `1px solid ${theme.palette.success.main}20`, // 20% opacity
+  backgroundColor: `${theme.palette.success.main}08`, // 8% opacity
 }));
 
-const QuestionCard = styled(Card)(({ theme }) => ({
-  marginBottom: theme.spacing(1),
-  border: `2px solid ${theme.palette.primary.main}`,
-}));
-
-const StatsCard = styled(Paper)(({ theme }) => ({
+const StatusSection = styled(Box)(({ theme }) => ({
   padding: theme.spacing(2),
+  borderRight: `1px solid ${theme.palette.divider}`,
+  flex: 1,
+}));
+
+const StatsSection = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(2),
+  flex: 1,
+  display: 'flex',
+  gap: theme.spacing(2),
+}));
+
+const StatItem = styled(Box)(({ theme }) => ({
   textAlign: 'center',
-  backgroundColor: theme.palette.primary.light,
-  color: theme.palette.primary.contrastText,
+  flex: 1,
+  padding: theme.spacing(1),
+  border: `1px solid ${theme.palette.primary.main}20`, // 20% opacity
+  borderRadius: theme.shape.borderRadius,
+  backgroundColor: `${theme.palette.primary.main}08`, // 8% opacity
 }));
 
 interface LivePresentationManagerProps {
   presentationId: string;
-  questions: Question[];
+  presentationName?: string;
+  onLiveSessionEnd?: () => void;
 }
 
 interface LiveSessionStatus {
@@ -69,42 +73,19 @@ interface LiveSessionStatus {
   totalQuestions: number;
 }
 
-interface QuestionResults {
-  questionId: string;
-  questionText: string;
-  questionType: number;
-  isLive: boolean;
-  totalResponses: number;
-  uniqueSessions: number;
-  responses: Array<{
-    id: string;
-    value: string;
-    sessionId: string;
-    timestamp: string;
-  }>;
-  choiceCounts?: Record<string, number>;
-  numericStats?: {
-    count: number;
-    average: number;
-    min: number;
-    max: number;
-    median: number;
-  };
-  yesNoCounts?: {
-    yes: number;
-    no: number;
-  };
-}
 
 const LivePresentationManager: React.FC<LivePresentationManagerProps> = ({
   presentationId,
-  questions
+  presentationName,
+  onLiveSessionEnd
 }) => {
   const [liveStatus, setLiveStatus] = useState<LiveSessionStatus | null>(null);
   const [audienceCount, setAudienceCount] = useState<number>(0);
-  const [questionResults, setQuestionResults] = useState<QuestionResults | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  
+  // Use questions context
+  const { activeQuestions, fetchQuestions, setQuestionLive } = useQuestions();
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
     title: string;
@@ -130,6 +111,31 @@ const LivePresentationManager: React.FC<LivePresentationManagerProps> = ({
     onAudienceCountUpdated,
     onJoinedPresenterSession
   } = useSignalR({ autoConnect: false });
+
+  // Use consolidated question results management
+  const {
+    expandedQuestions,
+    toggleQuestion,
+    getQuestionResults,
+    getLoadingState,
+    getErrorState,
+    refreshQuestionResults,
+    refreshAllQuestionResults,
+    lastUpdated
+  } = useMultipleQuestionResults(
+    presentationId,
+    activeQuestions.map(q => q.id),
+    {
+      pollingInterval: 10000,
+      enableRealTime: true,
+      enablePolling: true
+    }
+  );
+
+  // Fetch questions when component mounts
+  useEffect(() => {
+    fetchQuestions(presentationId);
+  }, [presentationId, fetchQuestions]);
 
   // Initialize SignalR connection
   useEffect(() => {
@@ -163,7 +169,7 @@ const LivePresentationManager: React.FC<LivePresentationManagerProps> = ({
     loadLiveStatus();
   }, [presentationId]);
 
-  // Load audience count
+  // Load initial audience count (no polling - relies on SignalR for updates)
   useEffect(() => {
     const loadAudienceCount = async () => {
       try {
@@ -175,9 +181,7 @@ const LivePresentationManager: React.FC<LivePresentationManagerProps> = ({
     };
 
     if (liveStatus?.isLive) {
-      loadAudienceCount();
-      const interval = setInterval(loadAudienceCount, 5000); // Update every 5 seconds
-      return () => clearInterval(interval);
+      loadAudienceCount(); // Only load once initially
     }
   }, [presentationId, liveStatus?.isLive]);
 
@@ -187,8 +191,11 @@ const LivePresentationManager: React.FC<LivePresentationManagerProps> = ({
       console.log('New response received:', data);
       // Refresh question results if this is the active question
       if (liveStatus?.activeQuestionId === data.questionId) {
-        loadQuestionResults(liveStatus.activeQuestionId);
+        refreshQuestionResults(liveStatus.activeQuestionId);
       }
+      // Also refresh all question results to keep total counts accurate
+      // This ensures the Total Response count in Live Session Management stays updated
+      refreshAllQuestionResults();
     });
 
     onAudienceCountUpdated((data: AudienceCountUpdatedEvent) => {
@@ -198,14 +205,46 @@ const LivePresentationManager: React.FC<LivePresentationManagerProps> = ({
     onJoinedPresenterSession(() => {
       console.log('Joined presenter session successfully');
     });
-  }, [onResponseReceived, onAudienceCountUpdated, onJoinedPresenterSession, liveStatus?.activeQuestionId]);
+  }, [onResponseReceived, onAudienceCountUpdated, onJoinedPresenterSession, liveStatus?.activeQuestionId, refreshQuestionResults, refreshAllQuestionResults]);
 
-  const loadQuestionResults = async (questionId: string) => {
+
+
+  const handleActivateQuestion = async (questionId: string) => {
     try {
-      const results = await apiService.getQuestionResults(presentationId, questionId);
-      setQuestionResults(results);
+      setLoading(true);
+      await activateQuestion(questionId);
+      const status = await apiService.getLiveSessionStatus(presentationId);
+      setLiveStatus(status);
+      
+      // Update question live status in context
+      setQuestionLive(questionId, true);
+      
+      await refreshQuestionResults(questionId);
+      setError('');
     } catch (err) {
-      console.error('Failed to load question results:', err);
+      console.error('Failed to activate question:', err);
+      setError('Failed to activate question');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeactivateQuestion = async (questionId: string) => {
+    try {
+      setLoading(true);
+      await deactivateQuestion(questionId);
+      const status = await apiService.getLiveSessionStatus(presentationId);
+      setLiveStatus(status);
+      
+      // Update question live status in context
+      setQuestionLive(questionId, false);
+      
+      setError('');
+    } catch (err) {
+      console.error('Failed to deactivate question:', err);
+      setError('Failed to deactivate question');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -243,8 +282,13 @@ const LivePresentationManager: React.FC<LivePresentationManagerProps> = ({
           await endLiveSession(presentationId);
           const status = await apiService.getLiveSessionStatus(presentationId);
           setLiveStatus(status);
-          setQuestionResults(null);
+          // Question results are managed by the consolidated hook
           setError('');
+          
+          // Notify parent component that live session has ended
+          if (onLiveSessionEnd) {
+            onLiveSessionEnd();
+          }
         } catch (err) {
           console.error('Failed to stop live session:', err);
           setError('Failed to stop live session');
@@ -256,37 +300,6 @@ const LivePresentationManager: React.FC<LivePresentationManagerProps> = ({
     });
   };
 
-  const handleActivateQuestion = async (questionId: string) => {
-    try {
-      setLoading(true);
-      await activateQuestion(questionId);
-      const status = await apiService.getLiveSessionStatus(presentationId);
-      setLiveStatus(status);
-      await loadQuestionResults(questionId);
-      setError('');
-    } catch (err) {
-      console.error('Failed to activate question:', err);
-      setError('Failed to activate question');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDeactivateQuestion = async (questionId: string) => {
-    try {
-      setLoading(true);
-      await deactivateQuestion(questionId);
-      const status = await apiService.getLiveSessionStatus(presentationId);
-      setLiveStatus(status);
-      setQuestionResults(null);
-      setError('');
-    } catch (err) {
-      console.error('Failed to deactivate question:', err);
-      setError('Failed to deactivate question');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const renderConnectionStatus = () => {
     if (isConnecting) {
@@ -310,37 +323,55 @@ const LivePresentationManager: React.FC<LivePresentationManagerProps> = ({
 
     if (liveStatus.isLive) {
       return (
-        <LiveCard>
-          <CardContent>
-            <Box display="flex" justifyContent="space-between" alignItems="center">
-              <Box>
-                <Typography variant="h6" gutterBottom>
+        <CombinedStatusCard>
+          <Box display="flex">
+            <StatusSection>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                <Typography variant="h6" color="success.main">
                   🟢 Live Session Active
                 </Typography>
-                <Typography variant="body2">
-                  Started: {new Date(liveStatus.liveStartedAt!).toLocaleTimeString()}
+                <Box display="flex" gap={1}>
+                  {renderConnectionStatus()}
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    startIcon={<Stop />}
+                    onClick={handleStopLiveSession}
+                    disabled={loading}
+                    size="small"
+                  >
+                    Stop Live
+                  </Button>
+                </Box>
+              </Box>
+              <Typography variant="body2" color="text.secondary">
+                Started: {new Date(liveStatus.liveStartedAt!).toLocaleTimeString()}
+              </Typography>
+              {liveStatus.activeQuestionId && (
+                <Typography variant="body2" color="text.secondary">
+                  Active Question: {liveStatus.activeQuestionText}
                 </Typography>
-                {liveStatus.activeQuestionId && (
-                  <Typography variant="body2">
-                    Active Question: {liveStatus.activeQuestionText}
-                  </Typography>
-                )}
-              </Box>
-              <Box display="flex" gap={1}>
-                {renderConnectionStatus()}
-                <Button
-                  variant="contained"
-                  color="error"
-                  startIcon={<Stop />}
-                  onClick={handleStopLiveSession}
-                  disabled={loading}
-                >
-                  Stop Live
-                </Button>
-              </Box>
-            </Box>
-          </CardContent>
-        </LiveCard>
+              )}
+            </StatusSection>
+            <StatsSection>
+              <StatItem>
+                <People fontSize="large" color="primary" />
+                <Typography variant="h4" color="primary.main">{audienceCount}</Typography>
+                <Typography variant="body2" color="text.secondary">Audience Members</Typography>
+              </StatItem>
+              <StatItem>
+                <QuestionAnswer fontSize="large" color="primary" />
+                <Typography variant="h4" color="primary.main">
+                  {activeQuestions.reduce((total, q) => {
+                    const results = getQuestionResults(q.id);
+                    return total + (results?.totalResponses || 0);
+                  }, 0)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">Total Responses</Typography>
+              </StatItem>
+            </StatsSection>
+          </Box>
+        </CombinedStatusCard>
       );
     }
 
@@ -374,134 +405,40 @@ const LivePresentationManager: React.FC<LivePresentationManagerProps> = ({
     );
   };
 
-  const renderAudienceStats = () => {
-    if (!liveStatus?.isLive) return null;
 
-    return (
-      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-        <StatsCard sx={{ flex: 1 }}>
-          <People fontSize="large" />
-          <Typography variant="h4">{audienceCount}</Typography>
-          <Typography variant="body2">Audience Members</Typography>
-        </StatsCard>
-        <StatsCard sx={{ flex: 1 }}>
-          <QuestionAnswer fontSize="large" />
-          <Typography variant="h4">{questionResults?.totalResponses || 0}</Typography>
-          <Typography variant="body2">Total Responses</Typography>
-        </StatsCard>
-      </Box>
-    );
-  };
 
   const renderQuestions = () => {
-    const activeQuestions = questions.filter(q => q.isActive);
 
     return (
       <Box>
         <Typography variant="h6" gutterBottom>
           Questions ({activeQuestions.length})
         </Typography>
-        <List>
-          {activeQuestions.map((question) => (
-            <QuestionCard key={question.id}>
-              <ListItem>
-                <ListItemText
-                  primary={question.text}
-                  secondary={`Type: ${getQuestionTypeName(question.type)} • Order: ${question.order}`}
-                />
-                <ListItemSecondaryAction>
-                  {liveStatus?.activeQuestionId === question.id ? (
-                    <Box display="flex" gap={1}>
-                      <Chip label="ACTIVE" color="success" size="small" />
-                      <IconButton
-                        color="error"
-                        onClick={() => handleDeactivateQuestion(question.id)}
-                        disabled={loading}
-                      >
-                        <Cancel />
-                      </IconButton>
-                    </Box>
-                  ) : (
-                    <IconButton
-                      color="primary"
-                      onClick={() => handleActivateQuestion(question.id)}
-                      disabled={loading || !liveStatus?.isLive}
-                    >
-                      <Send />
-                    </IconButton>
-                  )}
-                </ListItemSecondaryAction>
-              </ListItem>
-            </QuestionCard>
-          ))}
-        </List>
+        
+        {activeQuestions.map((question, index) => (
+          <QuestionItem
+            key={question.id}
+            questionId={question.id}
+            presentationId={presentationId}
+            presentationName={presentationName}
+            index={index}
+            onActivateQuestion={handleActivateQuestion}
+            onDeactivateQuestion={handleDeactivateQuestion}
+            loading={loading}
+            expandedQuestions={expandedQuestions}
+            toggleQuestion={toggleQuestion}
+            getQuestionResults={getQuestionResults}
+            getLoadingState={getLoadingState}
+            getErrorState={getErrorState}
+            lastUpdated={lastUpdated}
+            refreshQuestionResults={refreshQuestionResults}
+          />
+        ))}
       </Box>
     );
   };
 
-  const renderQuestionResults = () => {
-    if (!questionResults || !liveStatus?.activeQuestionId) return null;
 
-    return (
-      <Box sx={{ mt: 2 }}>
-        <Typography variant="h6" gutterBottom>
-          Live Results
-        </Typography>
-        <Paper sx={{ p: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            {questionResults.questionText}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            {questionResults.totalResponses} responses from {questionResults.uniqueSessions} participants
-          </Typography>
-          
-          <Divider sx={{ my: 2 }} />
-          
-          {questionResults.choiceCounts && (
-            <Box>
-              <Typography variant="subtitle1" gutterBottom>Choice Distribution:</Typography>
-              {Object.entries(questionResults.choiceCounts).map(([choice, count]) => (
-                <Box key={choice} display="flex" justifyContent="space-between" mb={1}>
-                  <Typography>{choice}</Typography>
-                  <Typography>{count}</Typography>
-                </Box>
-              ))}
-            </Box>
-          )}
-          
-          {questionResults.numericStats && (
-            <Box>
-              <Typography variant="subtitle1" gutterBottom>Numeric Statistics:</Typography>
-              <Typography>Average: {questionResults.numericStats.average.toFixed(2)}</Typography>
-              <Typography>Min: {questionResults.numericStats.min}</Typography>
-              <Typography>Max: {questionResults.numericStats.max}</Typography>
-              <Typography>Median: {questionResults.numericStats.median}</Typography>
-            </Box>
-          )}
-          
-          {questionResults.yesNoCounts && (
-            <Box>
-              <Typography variant="subtitle1" gutterBottom>Yes/No Results:</Typography>
-              <Typography>Yes: {questionResults.yesNoCounts.yes}</Typography>
-              <Typography>No: {questionResults.yesNoCounts.no}</Typography>
-            </Box>
-          )}
-        </Paper>
-      </Box>
-    );
-  };
-
-  const getQuestionTypeName = (type: number): string => {
-    switch (type) {
-      case QuestionType.MultipleChoiceSingle: return 'Multiple Choice (Single)';
-      case QuestionType.MultipleChoiceMultiple: return 'Multiple Choice (Multiple)';
-      case QuestionType.NumericRating: return 'Numeric Rating';
-      case QuestionType.YesNo: return 'Yes/No';
-      case QuestionType.OpenEnded: return 'Open Ended';
-      case QuestionType.WordCloud: return 'Word Cloud';
-      default: return 'Unknown';
-    }
-  };
 
   return (
     <Box>
@@ -512,9 +449,7 @@ const LivePresentationManager: React.FC<LivePresentationManagerProps> = ({
       )}
 
       {renderLiveStatus()}
-      {renderAudienceStats()}
       {renderQuestions()}
-      {renderQuestionResults()}
 
       <Dialog
         open={confirmDialog.open}

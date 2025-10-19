@@ -90,7 +90,7 @@ namespace LiveSentiment.Models
         public string Text { get; set; } = string.Empty;
         
         /// <summary>
-        /// The type of question (1=MultipleChoiceSingle, 2=MultipleChoiceMultiple, 3=NumericRating, 4=YesNo, 5=OpenEnded, 6=WordCloud)
+        /// The type of question (1=SingleChoice, 2=MultipleChoice, 3=NumericRating, 4=YesNo, 5=OpenEnded, 6=WordCloud)
         /// </summary>
         [Required]
         public QuestionType Type { get; set; }
@@ -138,6 +138,9 @@ namespace LiveSentiment.Models
         public bool EnableKeywordExtraction { get; set; }
         public int Order { get; set; }
         public bool IsActive { get; set; }
+        public bool IsLive { get; set; }
+        public DateTime? LiveStartedAt { get; set; }
+        public DateTime? LiveEndedAt { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime LastUpdated { get; set; }
         public int ResponseCount { get; set; }
@@ -150,6 +153,9 @@ namespace LiveSentiment.Models
         public QuestionType Type { get; set; }
         public int Order { get; set; }
         public bool IsActive { get; set; }
+        public bool IsLive { get; set; }
+        public DateTime? LiveStartedAt { get; set; }
+        public DateTime? LiveEndedAt { get; set; }
         public bool EnableSentimentAnalysis { get; set; }
         public int ResponseCount { get; set; }
     }

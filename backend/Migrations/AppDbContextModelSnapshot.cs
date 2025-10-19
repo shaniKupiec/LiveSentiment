@@ -189,6 +189,21 @@ namespace LiveSentiment.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("AnalysisCompleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("AnalysisError")
+                        .HasColumnType("text");
+
+                    b.Property<string>("AnalysisProvider")
+                        .HasColumnType("text");
+
+                    b.Property<JsonDocument>("AnalysisResults")
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTime?>("AnalysisTimestamp")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid>("QuestionId")
                         .HasColumnType("uuid");
 

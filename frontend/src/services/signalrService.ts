@@ -13,7 +13,8 @@ import type {
   ErrorEvent,
   ResponseReceivedEvent,
   AudienceCountUpdatedEvent,
-  JoinedPresenterSessionEvent
+  JoinedPresenterSessionEvent,
+  NLPAnalysisCompletedEvent
 } from '../types/signalr';
 import { 
   ConnectionState,
@@ -296,6 +297,11 @@ export class SignalRService {
     this.connection.on(SignalREvents.JoinedPresenterSession, (data: JoinedPresenterSessionEvent) => {
       console.log('🎯 Joined presenter session:', data);
       this.emit(SignalREvents.JoinedPresenterSession, data);
+    });
+
+    this.connection.on(SignalREvents.NLPAnalysisCompleted, (data: NLPAnalysisCompletedEvent) => {
+      console.log('🧠 NLP Analysis completed:', data);
+      this.emit(SignalREvents.NLPAnalysisCompleted, data);
     });
 
     // Error events

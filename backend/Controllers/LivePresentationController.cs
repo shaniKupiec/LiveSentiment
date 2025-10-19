@@ -335,8 +335,13 @@ namespace LiveSentiment.Controllers
                     {
                         Id = r.Id,
                         Value = r.Value,
-                        SessionId = r.SessionId,
-                        Timestamp = r.Timestamp
+                        SessionId = r.SessionId ?? string.Empty,
+                        Timestamp = r.Timestamp,
+                        AnalysisResults = r.AnalysisResults != null ? JsonSerializer.Deserialize<object>(r.AnalysisResults.RootElement.GetRawText()) : null,
+                        AnalysisTimestamp = r.AnalysisTimestamp,
+                        AnalysisCompleted = r.AnalysisCompleted,
+                        AnalysisProvider = r.AnalysisProvider,
+                        AnalysisError = r.AnalysisError
                     }).OrderByDescending(r => r.Timestamp).ToList()
                 };
 
@@ -357,7 +362,7 @@ namespace LiveSentiment.Controllers
                     case QuestionType.WordCloud:
                         if (question.EnableSentimentAnalysis || question.EnableEmotionAnalysis || question.EnableKeywordExtraction)
                         {
-                            results.TextAnalysis = GetTextAnalysis(question.Responses);
+                            results.NLPAnalysis = GetNLPAnalysisStats(question.Responses);
                         }
                         break;
                 }
@@ -552,17 +557,118 @@ namespace LiveSentiment.Controllers
             };
         }
 
-        private TextAnalysis GetTextAnalysis(ICollection<Response> responses)
+        private NLPAnalysisStats GetNLPAnalysisStats(ICollection<Response> responses)
         {
-            // This is a placeholder for text analysis
-            // In a real implementation, you would integrate with NLP services
-            return new TextAnalysis
+            if (!responses.Any())
+            {
+                return new NLPAnalysisStats
+                {
+                    TotalResponses = 0,
+                    AnalyzedResponses = 0,
+                    SentimentCounts = new Dictionary<string, int>(),
+                    SentimentPercentages = new Dictionary<string, double>(),
+                    EmotionCounts = new Dictionary<string, int>(),
+                    EmotionPercentages = new Dictionary<string, double>(),
+                    TopKeywords = new List<KeywordFrequency>(),
+                    UniqueKeywords = 0,
+                    AverageConfidence = 0
+                };
+            }
+
+            var analyzedResponses = responses.Where(r => r.AnalysisCompleted && r.AnalysisResults != null).ToList();
+            var sentimentCounts = new Dictionary<string, int>();
+            var emotionCounts = new Dictionary<string, int>();
+            var keywordCounts = new Dictionary<string, int>();
+
+            foreach (var response in analyzedResponses)
+            {
+                try
+                {
+                    var analysisData = JsonSerializer.Deserialize<Dictionary<string, object>>(response.AnalysisResults!.RootElement.GetRawText());
+                    
+                    if (analysisData == null) continue;
+                    
+                    // Count sentiment
+                    if (analysisData.TryGetValue("sentiment", out var sentimentObj) && sentimentObj is JsonElement sentimentElement)
+                    {
+                        if (sentimentElement.TryGetProperty("label", out var labelElement))
+                        {
+                            var label = labelElement.GetString() ?? "unknown";
+                            sentimentCounts[label] = sentimentCounts.GetValueOrDefault(label, 0) + 1;
+                        }
+                    }
+                    
+                    // Count emotion
+                    if (analysisData.TryGetValue("emotion", out var emotionObj) && emotionObj is JsonElement emotionElement)
+                    {
+                        if (emotionElement.TryGetProperty("label", out var labelElement))
+                        {
+                            var label = labelElement.GetString() ?? "unknown";
+                            emotionCounts[label] = emotionCounts.GetValueOrDefault(label, 0) + 1;
+                        }
+                    }
+                    
+                    // Count keywords
+                    if (analysisData.TryGetValue("keywords", out var keywordsObj) && keywordsObj is JsonElement keywordsElement)
+                    {
+                        if (keywordsElement.ValueKind == JsonValueKind.Array)
+                        {
+                            foreach (var keywordElement in keywordsElement.EnumerateArray())
+                            {
+                                if (keywordElement.TryGetProperty("text", out var textElement))
+                                {
+                                    var keyword = textElement.GetString()?.ToLowerInvariant() ?? "";
+                                    if (!string.IsNullOrEmpty(keyword))
+                                    {
+                                        keywordCounts[keyword] = keywordCounts.GetValueOrDefault(keyword, 0) + 1;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Error parsing analysis data for response {ResponseId}", response.Id);
+                }
+            }
+
+            // Calculate percentages
+            var sentimentPercentages = sentimentCounts.ToDictionary(
+                kvp => kvp.Key, 
+                kvp => analyzedResponses.Count > 0 ? (double)kvp.Value / analyzedResponses.Count * 100 : 0
+            );
+            
+            var emotionPercentages = emotionCounts.ToDictionary(
+                kvp => kvp.Key, 
+                kvp => analyzedResponses.Count > 0 ? (double)kvp.Value / analyzedResponses.Count * 100 : 0
+            );
+
+            // Create keyword frequencies with percentages
+            var totalKeywordOccurrences = keywordCounts.Values.Sum();
+            var topKeywords = keywordCounts
+                .OrderByDescending(kvp => kvp.Value)
+                .Take(10)
+                .Select(kvp => new KeywordFrequency
+                {
+                    Text = kvp.Key,
+                    Count = kvp.Value,
+                    Percentage = totalKeywordOccurrences > 0 ? (double)kvp.Value / totalKeywordOccurrences * 100 : 0,
+                    AverageRelevance = 0.8 // Placeholder - would need to calculate from actual relevance scores
+                })
+                .ToList();
+
+            return new NLPAnalysisStats
             {
                 TotalResponses = responses.Count,
-                AverageLength = responses.Average(r => r.Value.Length),
-                CommonWords = new Dictionary<string, int>(), // Would be populated by NLP analysis
-                SentimentDistribution = new Dictionary<string, int>(), // Would be populated by sentiment analysis
-                EmotionDistribution = new Dictionary<string, int>() // Would be populated by emotion analysis
+                AnalyzedResponses = analyzedResponses.Count,
+                SentimentCounts = sentimentCounts,
+                SentimentPercentages = sentimentPercentages,
+                EmotionCounts = emotionCounts,
+                EmotionPercentages = emotionPercentages,
+                TopKeywords = topKeywords,
+                UniqueKeywords = keywordCounts.Count,
+                AverageConfidence = 0.85 // Placeholder - would need to calculate from actual confidence scores
             };
         }
 
@@ -616,6 +722,7 @@ namespace LiveSentiment.Controllers
         public NumericStats? NumericStats { get; set; }
         public YesNoCounts? YesNoCounts { get; set; }
         public TextAnalysis? TextAnalysis { get; set; }
+        public NLPAnalysisStats? NLPAnalysis { get; set; }
     }
 
     public class ResponseSummary
@@ -624,6 +731,13 @@ namespace LiveSentiment.Controllers
         public string Value { get; set; } = string.Empty;
         public string SessionId { get; set; } = string.Empty;
         public DateTime Timestamp { get; set; }
+        
+        // NLP Analysis Results
+        public object? AnalysisResults { get; set; }
+        public DateTime? AnalysisTimestamp { get; set; }
+        public bool AnalysisCompleted { get; set; } = false;
+        public string? AnalysisProvider { get; set; }
+        public string? AnalysisError { get; set; }
     }
 
     public class LiveSessionStatusResponse
@@ -645,6 +759,7 @@ namespace LiveSentiment.Controllers
         public int AudienceCount { get; set; }
         public DateTime LastUpdated { get; set; }
     }
+
 
     public class TextAnalysis
     {

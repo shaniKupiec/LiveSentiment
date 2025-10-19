@@ -53,6 +53,7 @@ import type { Question, QuestionFormData, QuestionType } from '../types/question
 import { QuestionType as QuestionTypeValues } from '../types/question';
 import type { Presentation } from '../types/presentation';
 import { apiService } from '../services/api';
+import { getQuestionTypeName } from '../utils/questionTypeUtils';
 
 // Pulse animation for live status
 const pulse = keyframes`
@@ -70,7 +71,7 @@ const pulse = keyframes`
 interface QuestionsManagementProps {
   presentation: Presentation;
   questions: Question[];
-  onQuestionsChange: (questions: Question[]) => void;
+  onQuestionsChange: (questions?: Question[]) => void;
   isLoading?: boolean;
 }
 
@@ -194,9 +195,6 @@ const SortableQuestionItem: React.FC<{
                 />
               )}
             </Box>
-            <Typography variant="body2" color="text.secondary">
-              {question.responseCount} responses
-            </Typography>
           </Box>
         }
         secondaryTypographyProps={{ component: 'div' }}
@@ -245,7 +243,11 @@ const QuestionsManagement: React.FC<QuestionsManagementProps> = ({
 
   // DnD sensors
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Require 8px of movement before drag starts
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -271,22 +273,7 @@ const QuestionsManagement: React.FC<QuestionsManagementProps> = ({
   };
 
   const getQuestionTypeLabel = (type: QuestionType): string => {
-    switch (type) {
-      case QuestionTypeValues.MultipleChoiceSingle:
-        return 'Multiple Choice (Single)';
-      case QuestionTypeValues.MultipleChoiceMultiple:
-        return 'Multiple Choice (Multiple)';
-      case QuestionTypeValues.NumericRating:
-        return 'Numeric Rating';
-      case QuestionTypeValues.YesNo:
-        return 'Yes/No';
-      case QuestionTypeValues.OpenEnded:
-        return 'Open Ended';
-      case QuestionTypeValues.WordCloud:
-        return 'Word Cloud';
-      default:
-        return 'Unknown';
-    }
+    return getQuestionTypeName(type);
   };
 
   const getNlpFeaturesText = (question: Question): string => {
