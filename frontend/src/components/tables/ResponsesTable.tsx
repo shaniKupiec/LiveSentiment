@@ -440,7 +440,7 @@ const ResponsesTable: React.FC<ResponsesTableProps> = ({
                   direction={orderBy === 'value' ? order : 'asc'}
                   onClick={() => handleSort('value')}
                 >
-                  Response Value
+                  Response
                 </TableSortLabel>
               </TableCell>
               <TableCell>

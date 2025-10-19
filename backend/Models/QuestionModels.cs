@@ -90,7 +90,7 @@ namespace LiveSentiment.Models
         public string Text { get; set; } = string.Empty;
         
         /// <summary>
-        /// The type of question (1=MultipleChoiceSingle, 2=MultipleChoiceMultiple, 3=NumericRating, 4=YesNo, 5=OpenEnded, 6=WordCloud)
+        /// The type of question (1=SingleChoice, 2=MultipleChoice, 3=NumericRating, 4=YesNo, 5=OpenEnded, 6=WordCloud)
         /// </summary>
         [Required]
         public QuestionType Type { get; set; }

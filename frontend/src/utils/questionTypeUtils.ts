@@ -37,9 +37,9 @@ export const getQuestionTypeDisplayName = (type: QuestionType, includeParenthese
   
   switch (type) {
     case QuestionType.MultipleChoiceSingle:
-      return 'Multiple Choice (Single)';
+      return 'Single Choice';
     case QuestionType.MultipleChoiceMultiple:
-      return 'Multiple Choice (Multiple)';
+      return 'Multiple Choice';
     default:
       return baseName;
   }
