@@ -111,8 +111,9 @@ export const useQuestionResults = ({
       setLastUpdated(new Date());
       
       console.log(`📊 Question results updated for ${questionId}:`, {
-        totalResponses: data.totalResponses,
-        uniqueSessions: data.uniqueSessions,
+        totalResponses: data?.totalResponses || 0,
+        uniqueSessions: data?.uniqueSessions || 0,
+        hasResponses: data?.responses?.length || 0,
         timestamp: new Date().toISOString()
       });
     } catch (err) {
@@ -121,7 +122,7 @@ export const useQuestionResults = ({
     } finally {
       setLoading(false);
     }
-  }, [presentationId, questionId]); // Removed isExpanded dependency
+  }, [presentationId, questionId, isExpanded]); // Added isExpanded back to dependency array
 
   // Keep ref updated with latest fetchResults function
   const fetchResultsRef = useRef(fetchResults);
@@ -136,11 +137,9 @@ export const useQuestionResults = ({
   useEffect(() => {
     if (!isExpanded) return;
 
-    // Initial load for all questions (live or not)
-    if (isInitialLoadRef.current) {
-      fetchResults();
-      isInitialLoadRef.current = false;
-    }
+    // Always fetch results when accordion is expanded (not just on initial load)
+    console.log(`🚀 Calling fetchResults for question ${questionId}`);
+    fetchResults();
   }, [isExpanded, fetchResults]);
 
   // Set up polling interval only when SignalR is disconnected (as backup)
@@ -247,7 +246,6 @@ export const useMultipleQuestionResults = (
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const isInitialLoadRef = useRef(true);
 
   // Get SignalR connection for real-time updates
   const { isConnected, onResponseReceived, onNLPAnalysisCompleted } = useSignalR({ autoConnect: false });
@@ -313,17 +311,14 @@ export const useMultipleQuestionResults = (
     await Promise.all(promises);
   }, [questionIds, refreshQuestionResults]);
 
-  // Initial load for expanded questions
+  // Load results for expanded questions
   useEffect(() => {
     if (expandedQuestions.size === 0) return;
 
-    // Initial load for all expanded questions
-    if (isInitialLoadRef.current) {
-      expandedQuestions.forEach(questionId => {
-        refreshQuestionResults(questionId);
-      });
-      isInitialLoadRef.current = false;
-    }
+    // Load results for all expanded questions
+    expandedQuestions.forEach(questionId => {
+      refreshQuestionResults(questionId);
+    });
   }, [expandedQuestions, refreshQuestionResults]);
 
   // Shared polling interval - only when SignalR is disconnected

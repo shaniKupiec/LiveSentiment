@@ -16,7 +16,7 @@ import {
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import type { Question } from '../types/question';
-import { useQuestionResults, type QuestionResults } from '../hooks/useQuestionResults';
+import { useQuestionResults } from '../hooks/useQuestionResults';
 import DashboardTab from './tabs/DashboardTab';
 import ResponsesTable from './tables/ResponsesTable';
 
@@ -56,12 +56,6 @@ interface QuestionResponseAccordionProps {
   presentationName?: string;
   isExpanded: boolean;
   onToggle: (questionId: string) => void;
-  // Optional shared data - if provided, use instead of individual hook
-  sharedResults?: QuestionResults | null;
-  sharedLoading?: boolean;
-  sharedError?: string | null;
-  sharedLastUpdated?: Date | null;
-  onRefresh?: () => Promise<void>;
 }
 
 interface TabPanelProps {
@@ -95,31 +89,25 @@ const QuestionResponseAccordion: React.FC<QuestionResponseAccordionProps> = ({
   presentationId,
   presentationName,
   isExpanded,
-  onToggle,
-  sharedResults,
-  sharedLoading,
-  sharedError,
-  sharedLastUpdated,
-  onRefresh
+  onToggle
 }) => {
   const [tabValue, setTabValue] = useState(0);
   
-  // Use shared data if provided, otherwise fall back to individual hook
-  const individualHook = useQuestionResults({
+  // Use individual hook for each question
+  const {
+    results,
+    loading,
+    error,
+    refresh,
+    lastUpdated
+  } = useQuestionResults({
     presentationId,
     questionId: question.id,
-    isExpanded: isExpanded && !sharedResults, // Only use individual hook if no shared data
+    isExpanded: isExpanded, // Simplified - always use isExpanded directly
     pollingInterval: 10000,
     enableRealTime: question.isLive && isExpanded,
     enablePolling: question.isLive && isExpanded
   });
-
-  // Use shared data when available, otherwise use individual hook data
-  const results = sharedResults || individualHook.results;
-  const loading = sharedLoading !== undefined ? sharedLoading : individualHook.loading;
-  const error = sharedError !== undefined ? sharedError : individualHook.error;
-  const lastUpdated = sharedLastUpdated || individualHook.lastUpdated;
-  const refresh = onRefresh || individualHook.refresh;
 
   
 

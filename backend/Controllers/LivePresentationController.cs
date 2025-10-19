@@ -318,8 +318,10 @@ namespace LiveSentiment.Controllers
                     return this.NotFound(ErrorCodes.QUESTION_NOT_FOUND, "Question not found or access denied", "Question not found or you don't have access to it.");
                 }
 
-                var totalResponses = question.Responses.Count;
-                var uniqueSessions = question.Responses.Select(r => r.SessionId).Distinct().Count();
+                // Get responses directly from database since Include() might not work properly
+                var responses = await _context.Responses.Where(r => r.QuestionId == qId).ToListAsync();
+                var totalResponses = responses.Count;
+                var uniqueSessions = responses.Select(r => r.SessionId).Distinct().Count();
 
                 var results = new QuestionResultsResponse
                 {
@@ -331,7 +333,7 @@ namespace LiveSentiment.Controllers
                     LiveEndedAt = question.LiveEndedAt,
                     TotalResponses = totalResponses,
                     UniqueSessions = uniqueSessions,
-                    Responses = question.Responses.Select(r => new ResponseSummary
+                    Responses = responses.Select(r => new ResponseSummary
                     {
                         Id = r.Id,
                         Value = r.Value,
@@ -350,19 +352,19 @@ namespace LiveSentiment.Controllers
                 {
                     case QuestionType.MultipleChoiceSingle:
                     case QuestionType.MultipleChoiceMultiple:
-                        results.ChoiceCounts = GetChoiceCounts(question.Responses, question.Configuration);
+                        results.ChoiceCounts = GetChoiceCounts(responses, question.Configuration);
                         break;
                     case QuestionType.NumericRating:
-                        results.NumericStats = GetNumericStats(question.Responses);
+                        results.NumericStats = GetNumericStats(responses);
                         break;
                     case QuestionType.YesNo:
-                        results.YesNoCounts = GetYesNoCounts(question.Responses);
+                        results.YesNoCounts = GetYesNoCounts(responses);
                         break;
                     case QuestionType.OpenEnded:
                     case QuestionType.WordCloud:
                         if (question.EnableSentimentAnalysis || question.EnableEmotionAnalysis || question.EnableKeywordExtraction)
                         {
-                            results.NLPAnalysis = GetNLPAnalysisStats(question.Responses);
+                            results.NLPAnalysis = GetNLPAnalysisStats(responses);
                         }
                         break;
                 }

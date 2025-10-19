@@ -115,13 +115,7 @@ const LivePresentationManager: React.FC<LivePresentationManagerProps> = ({
   // Use consolidated question results management
   const {
     expandedQuestions,
-    toggleQuestion,
-    getQuestionResults,
-    getLoadingState,
-    getErrorState,
-    refreshQuestionResults,
-    refreshAllQuestionResults,
-    lastUpdated
+    toggleQuestion
   } = useMultipleQuestionResults(
     presentationId,
     activeQuestions.map(q => q.id),
@@ -190,12 +184,7 @@ const LivePresentationManager: React.FC<LivePresentationManagerProps> = ({
     onResponseReceived((data: ResponseReceivedEvent) => {
       console.log('New response received:', data);
       // Refresh question results if this is the active question
-      if (liveStatus?.activeQuestionId === data.questionId) {
-        refreshQuestionResults(liveStatus.activeQuestionId);
-      }
-      // Also refresh all question results to keep total counts accurate
-      // This ensures the Total Response count in Live Session Management stays updated
-      refreshAllQuestionResults();
+      // Note: Individual question results will be refreshed automatically via their individual hooks
     });
 
     onAudienceCountUpdated((data: AudienceCountUpdatedEvent) => {
@@ -205,7 +194,7 @@ const LivePresentationManager: React.FC<LivePresentationManagerProps> = ({
     onJoinedPresenterSession(() => {
       console.log('Joined presenter session successfully');
     });
-  }, [onResponseReceived, onAudienceCountUpdated, onJoinedPresenterSession, liveStatus?.activeQuestionId, refreshQuestionResults, refreshAllQuestionResults]);
+  }, [onResponseReceived, onAudienceCountUpdated, onJoinedPresenterSession, liveStatus?.activeQuestionId]);
 
 
 
@@ -219,7 +208,6 @@ const LivePresentationManager: React.FC<LivePresentationManagerProps> = ({
       // Update question live status in context
       setQuestionLive(questionId, true);
       
-      await refreshQuestionResults(questionId);
       setError('');
     } catch (err) {
       console.error('Failed to activate question:', err);
@@ -362,10 +350,7 @@ const LivePresentationManager: React.FC<LivePresentationManagerProps> = ({
               <StatItem>
                 <QuestionAnswer fontSize="large" color="primary" />
                 <Typography variant="h4" color="primary.main">
-                  {activeQuestions.reduce((total, q) => {
-                    const results = getQuestionResults(q.id);
-                    return total + (results?.totalResponses || 0);
-                  }, 0)}
+                  {activeQuestions.reduce((total, q) => total + (q.responseCount || 0), 0)}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">Total Responses</Typography>
               </StatItem>
@@ -427,11 +412,6 @@ const LivePresentationManager: React.FC<LivePresentationManagerProps> = ({
             loading={loading}
             expandedQuestions={expandedQuestions}
             toggleQuestion={toggleQuestion}
-            getQuestionResults={getQuestionResults}
-            getLoadingState={getLoadingState}
-            getErrorState={getErrorState}
-            lastUpdated={lastUpdated}
-            refreshQuestionResults={refreshQuestionResults}
           />
         ))}
       </Box>

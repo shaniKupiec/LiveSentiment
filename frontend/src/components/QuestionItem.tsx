@@ -52,11 +52,6 @@ interface QuestionItemProps {
   loading: boolean;
   expandedQuestions: Set<string>;
   toggleQuestion: (questionId: string) => void;
-  getQuestionResults: (questionId: string) => any;
-  getLoadingState: (questionId: string) => boolean;
-  getErrorState: (questionId: string) => string | null;
-  lastUpdated: Date | null;
-  refreshQuestionResults: (questionId: string) => Promise<void>;
 }
 
 const QuestionItem: React.FC<QuestionItemProps> = ({
@@ -68,12 +63,7 @@ const QuestionItem: React.FC<QuestionItemProps> = ({
   onDeactivateQuestion,
   loading,
   expandedQuestions,
-  toggleQuestion,
-  getQuestionResults,
-  getLoadingState,
-  getErrorState,
-  lastUpdated,
-  refreshQuestionResults
+  toggleQuestion
 }) => {
   const { getQuestionById } = useQuestions();
   
@@ -182,11 +172,6 @@ const QuestionItem: React.FC<QuestionItemProps> = ({
         presentationName={presentationName}
         isExpanded={expandedQuestions.has(questionId)}
         onToggle={handleAccordionToggle}
-        sharedResults={getQuestionResults(questionId)}
-        sharedLoading={getLoadingState(questionId)}
-        sharedError={getErrorState(questionId)}
-        sharedLastUpdated={lastUpdated}
-        onRefresh={() => refreshQuestionResults(questionId)}
       />
     </Box>
   );
